@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  PowerUpdater: Eskom Load Shedding Telegram Bot
+
+Globals:
+  Function:
+    Timeout: 40
+    MemorySize: 1024
+    Runtime: python3.9
+    Architectures:
+        - x86_64
+    ReservedConcurrentExecutions: 1
+
+Parameters:
+    StageEnv:
+      Type: String
+      AllowedValues:
+        - dev
+        - prod
+    TelegramBotToken:
+      Type: String
+    TelegramChatID:
+      Type: String
+
+Mappings:
+  StageMappings:
+    dev:
+      stage: dev
+    prod:
+      stage: prod
+
+Resources:
+  PowerUpdaterGetStageFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: power_updater/
+      Handler: get_stage_lambda.lambda_handler
+      Environment:
+        Variables:
+          PowerUpdaterTableName: !Ref PowerUpdaterTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PowerUpdaterTable 
+      Events:
+        GetEskomStageEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 * * * ? *)
+
+  PowerUpdaterGetScheduleFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: power_updater/
+      Handler: get_schedule_lambda.lambda_handler
+      Environment:
+        Variables:
+          PowerUpdaterTableName: !Ref PowerUpdaterTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PowerUpdaterTable 
+      Events:
+        GetEskomScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 1 * * ? *)
+  
+  PowerUpdaterNotificationFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: power_updater/
+      Handler: notification_lambda.lambda_handler
+      Environment:
+        Variables:
+          PowerUpdaterTableName: !Ref PowerUpdaterTable
+          TelegramBotToken: !Ref TelegramBotToken
+          TelegramChatID: !Ref TelegramChatID
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PowerUpdaterTable
+      ReservedConcurrentExecutions: 1
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt PowerUpdaterTable.StreamArn
+            BatchSize: 1
+            StartingPosition: TRIM_HORIZON
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["MODIFY"]}'
+        NotificationEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 * */2 * ? *)
+
+  PowerUpdaterTable:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: area
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: area
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES

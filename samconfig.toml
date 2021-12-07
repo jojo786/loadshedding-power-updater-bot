@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "power-updater"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-2eb1ub1r41ba"
+s3_prefix = "power-updater"
+region = "af-south-1"
+capabilities = "CAPABILITY_IAM"
+disable_rollback = false
+image_repositories = []

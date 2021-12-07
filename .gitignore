@@ -1,0 +1,7 @@
+*.zip
+*.pyc
+packaged.yml
+.aws-sam/
+.mypy_cache/
+.venv
+power.py
