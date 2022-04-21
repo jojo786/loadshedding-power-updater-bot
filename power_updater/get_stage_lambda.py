@@ -53,4 +53,5 @@ def WriteToDB(area, load_stage):
 
 def lambda_handler(event, context):
     load_stage = GetLoadsheddingStage()
-    WriteToDB('Buccleuch', load_stage)
+    if load_stage > -1: #sometimes eskom loads negative numbers, so ignore
+        WriteToDB('Buccleuch', load_stage)

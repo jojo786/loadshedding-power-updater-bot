@@ -46,7 +46,7 @@ Resources:
         GetEskomStageEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(0 * * * ? *)
+            Schedule: cron(0 * * * ? *) #run every hour
 
   PowerUpdaterGetScheduleFunction:
     Type: AWS::Serverless::Function 
@@ -63,7 +63,7 @@ Resources:
         GetEskomScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(0 1 * * ? *)
+            Schedule: cron(0 1 * * ? *) #run 1am every day
   
   PowerUpdaterNotificationFunction:
     Type: AWS::Serverless::Function 
@@ -72,12 +72,23 @@ Resources:
       Handler: notification_lambda.lambda_handler
       Environment:
         Variables:
+          stage: !FindInMap [StageMappings, !Ref StageEnv, stage]
           PowerUpdaterTableName: !Ref PowerUpdaterTable
           TelegramBotToken: !Ref TelegramBotToken
           TelegramChatID: !Ref TelegramChatID
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
+        - Statement:
+          -
+            Effect: "Allow"
+            Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+              - ssm:GetParametersByPath
+            Resource:
+              - '*'
+              - 'arn:aws:ssm:::parameter/telegramtasweerbot/*'
       ReservedConcurrentExecutions: 1
       Events:
         Stream:
@@ -92,7 +103,7 @@ Resources:
         NotificationEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(0 * */2 * ? *)
+            Schedule: cron(0 */2 * * ? *) #run every 2 hours
 
   PowerUpdaterTable:
     Type: AWS::DynamoDB::Table
@@ -106,3 +117,11 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
+
+  TelegramBotTokenParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: TelegramBotToken
+      Type: String
+      Value: date
+      Description: SSM Parameter for running date command.

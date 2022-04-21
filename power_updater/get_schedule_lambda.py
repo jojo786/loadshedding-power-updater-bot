@@ -7,9 +7,9 @@ import os
 dynamodb = boto3.resource('dynamodb', 'af-south-1')
 load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 
-def GetLoadsheddingSchedule():
+def GetLoadsheddingSchedule(stage):
 
-    schedule = requests.get("https://loadshedding.eskom.co.za/LoadShedding/GetScheduleM/1020715/2/Gauteng/2808")
+    schedule = requests.get("https://loadshedding.eskom.co.za/LoadShedding/GetScheduleM/1020715/"+str(stage)+"/Gauteng/2808")
 
     # parse the whole page
     soup = BeautifulSoup(schedule.content, "html.parser")
@@ -58,7 +58,15 @@ def WriteToDB(area, schedule):
         },
         )
     
+def getStage():
+    print ("Getting Stage")
+    response = load_table.get_item(Key={'area': 'Buccleuch'})
+    print (response)
+    load_stage = response['Item']['load_stage']
+    return load_stage
+       
 
 def lambda_handler(event, context):
-    schedule = GetLoadsheddingSchedule()
+    stage = getStage()
+    schedule = GetLoadsheddingSchedule(stage)
     WriteToDB('Buccleuch', schedule)
