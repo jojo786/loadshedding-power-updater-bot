@@ -64,6 +64,15 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: cron(0 1 * * ? *) #run 1am every day
+        Stream: #invoked whenever the stage changes, need to get the updated scheduled for the new stage
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt PowerUpdaterTable.StreamArn
+            BatchSize: 1
+            StartingPosition: TRIM_HORIZON
+            FilterCriteria:
+              Filters:
+                - Pattern: '{"eventName": ["MODIFY"]}'
   
   PowerUpdaterNotificationFunction:
     Type: AWS::Serverless::Function 
@@ -91,7 +100,7 @@ Resources:
               - 'arn:aws:ssm:::parameter/telegramtasweerbot/*'
       ReservedConcurrentExecutions: 1
       Events:
-        Stream:
+        Stream: #invoked when the stage changes, need to send telegram updates
           Type: DynamoDB
           Properties:
             Stream: !GetAtt PowerUpdaterTable.StreamArn
