@@ -60,10 +60,10 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable 
       Events:
-        GetEskomScheduleEvent:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0 1 * * ? *) #run 1am every day
+        #GetEskomScheduleEvent:
+        #  Type: Schedule
+        #  Properties:
+        #    Schedule: cron(0 1 * * ? *) #run 1am every day
         Stream: #invoked whenever the stage changes, need to get the updated scheduled for the new stage
           Type: DynamoDB
           Properties:
