@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 import boto3
 import os
 
-dynamodb = boto3.resource('dynamodb', 'af-south-1')
+dynamodb = boto3.resource('dynamodb')
 load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 
 def GetLoadsheddingStage():

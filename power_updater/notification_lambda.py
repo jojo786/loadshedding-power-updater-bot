@@ -3,7 +3,7 @@ import boto3
 import os
 import datetime
 
-dynamodb = boto3.resource('dynamodb', 'af-south-1')
+dynamodb = boto3.resource('dynamodb')
 load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 TelegramBotToken = os.environ['TelegramBotToken']
 TelegramChatID = os.environ['TelegramChatID']
