@@ -112,7 +112,7 @@ Resources:
         NotificationEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(0 */2 * * ? *) #run every 2 hours
+            Schedule: cron(0 5,9,13,17,21 * * ? *) #run 4 hourly, at specific hours.
 
   PowerUpdaterTable:
     Type: AWS::DynamoDB::Table
