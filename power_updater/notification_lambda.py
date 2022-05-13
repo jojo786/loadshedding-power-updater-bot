@@ -17,12 +17,13 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     
     try:
         schedule_today = schedule[today.strftime("%a, %d %b")]['S']
+    except:
+        schedule_today = "NO LOADSHEDDING"
+        
+    try:
         schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
     except:
-        schedule_today = schedule[today.strftime("%a, %d %b")]
-        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
-
-    
+        schedule_tomorrow = "NO LOADSHEDDING"
 
     if int(load_stage) > 0:
         #print(schedule[today.strftime("%a, %d %b")]['S'])
