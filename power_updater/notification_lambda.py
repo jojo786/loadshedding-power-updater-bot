@@ -16,22 +16,34 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     print(schedule)
     
     try:
-        schedule_today = schedule[today.strftime("%a, %d %b")]['S']
+        print("trying to read the today schedule with NO 'S' ")
+        schedule_today = schedule[today.strftime("%a, %d %b")]
     except:
-        schedule_today = "NO LOADSHEDDING"
-        
+        try:
+            print("trying to read the today schedule with 'S' ")
+            schedule_today = schedule[today.strftime("%a, %d %b")]['S']
+        except:
+            print("no schedule set for today ")
+            schedule_today = "NO LOADSHEDDING"
+
     try:
-        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
+        print("trying to read the tomorrow schedule with NO 'S' ")
+        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
     except:
-        schedule_tomorrow = "NO LOADSHEDDING"
+        try:
+            print("trying to read the tomorrow schedule with 'S' ")
+            schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
+        except:
+            print("no schedule set for tomorrow ")
+            schedule_tomorrow = "NO LOADSHEDDING"
 
     if int(load_stage) > 0:
         #print(schedule[today.strftime("%a, %d %b")]['S'])
         load_message = (area + " Loadshedding Notice \n"
         "Stage " + str(load_stage) + "  \n"
-        "The load shedding schedule for today is as follows: \n" 
+        "The load shedding schedule for today - " + today.strftime("%a, %d %b") + " - is as follows: \n" 
         " " + schedule_today + "  \n" +
-        "The load shedding schedule for tomorrow is as follows: \n" 
+        "The load shedding schedule for tomorrow - " + tomorrow.strftime("%a, %d %b") + " - is as follows: \n" 
         " " + schedule_tomorrow)
 
         telegram_response = requests.post(
@@ -47,6 +59,7 @@ def PostToTelegram_Stage(area, load_stage):
        load_stage = "0 (No Loadshedding)"
         
     load_message = (area + " Loadshedding Notice \n"
+        + today.strftime("%a, %d %b") + "  \n"
         "Eskom has now moved to stage " + str(load_stage) + "  \n")
 
     telegram_response = requests.post(
