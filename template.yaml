@@ -6,10 +6,10 @@ Description: >
 Globals:
   Function:
     Timeout: 40
-    MemorySize: 1024
+    MemorySize: 128
     Runtime: python3.9
     Architectures:
-        - x86_64
+        - arm64
     ReservedConcurrentExecutions: 1
 
 Parameters:
@@ -60,10 +60,10 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable 
       Events:
-        #GetEskomScheduleEvent:
-        #  Type: Schedule
-        #  Properties:
-        #    Schedule: cron(0 1 * * ? *) #run 1am every day
+        GetEskomScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 3,7,11,15,19 * * ? *) #run 4 hourly, at specific hours  in GMT
         Stream: #invoked whenever the stage changes, need to get the updated scheduled for the new stage
           Type: DynamoDB
           Properties:
@@ -98,7 +98,6 @@ Resources:
             Resource:
               - '*'
               - 'arn:aws:ssm:::parameter/telegramtasweerbot/*'
-      ReservedConcurrentExecutions: 1
       Events:
         Stream: #invoked when the stage changes, need to send telegram updates
           Type: DynamoDB
@@ -112,7 +111,7 @@ Resources:
         NotificationEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(0 3,7,11,13,19 * * ? *) #run 4 hourly, at specific hours  in GMT
+            Schedule: cron(0 3,7,11,15,19 * * ? *) #run 4 hourly, at specific hours  in GMT
 
   PowerUpdaterTable:
     Type: AWS::DynamoDB::Table
@@ -126,11 +125,3 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
-
-  TelegramBotTokenParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: TelegramBotToken
-      Type: String
-      Value: date
-      Description: SSM Parameter for running date command.

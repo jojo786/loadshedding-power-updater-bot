@@ -8,6 +8,7 @@ dynamodb = boto3.resource('dynamodb')
 load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 
 def GetLoadsheddingSchedule(stage):
+    print ("Getting Schedule for stage " + str(stage))
 
     schedule = requests.get("https://loadshedding.eskom.co.za/LoadShedding/GetScheduleM/1020715/"+str(stage)+"/Gauteng/2808")
 
@@ -49,19 +50,19 @@ def WriteToDB(area, schedule):
     if len(schedule) > 0:
         print("Update to Dynamo")
         response = load_table.update_item(
-        Key={
-            'area': area
-        },
-        UpdateExpression="set schedule = :schedule",
-        ExpressionAttributeValues={
-            ':schedule': schedule
-        },
+            Key={
+                'area': area
+            },
+            UpdateExpression="set schedule = :schedule",
+            ExpressionAttributeValues={
+                ':schedule': schedule
+            },
         )
     
 def getStage():
-    print ("Getting Stage")
+    print ("Getting Stage from DynamoDB")
     response = load_table.get_item(Key={'area': 'Buccleuch'})
-    print (response)
+    #print (response)
     load_stage = response['Item']['load_stage']
     return load_stage
        
