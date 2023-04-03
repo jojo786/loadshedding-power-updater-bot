@@ -18,6 +18,13 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     try:
         print("trying to read the today schedule with NO 'S' ")
         schedule_today = schedule[today.strftime("%a, %d %b")]
+
+        #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
+        for time in schedule_today.split(","):
+            start_time, stop_time = time.split("-")
+        
+            if stop_time.strip() > today.strftime("%H:%M"):
+                schedule_today += (start_time +" - " + stop_time + "\n")
     except:
         try:
             print("trying to read the today schedule with 'S' ")
@@ -41,9 +48,9 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         #print(schedule[today.strftime("%a, %d %b")]['S'])
         load_message = (area + " Loadshedding Notice \n"
         "Stage " + str(load_stage) + "  \n"
-        "The load shedding schedule for today - " + today.strftime("%a, %d %b") + " - is as follows: \n" 
+        "The loadshedding schedule for today - " + today.strftime("%a, %d %b") + ": \n" 
         " " + schedule_today + "  \n" +
-        "The load shedding schedule for tomorrow - " + tomorrow.strftime("%a, %d %b") + " - is as follows: \n" 
+        "The loadshedding schedule for tomorrow - " + tomorrow.strftime("%a, %d %b") + ": \n" 
         " " + schedule_tomorrow)
 
         telegram_response = requests.post(
