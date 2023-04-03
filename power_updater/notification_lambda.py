@@ -20,10 +20,11 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         schedule_today = schedule[today.strftime("%a, %d %b")]
         #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
         schedule_today_temp = ''
+         #tokenise on , then - 
         for time in schedule_today.split(","):
             start_time, stop_time = time.split("-")
         
-            if stop_time.strip() > today.strftime("%H:%M"):
+            if start_time.strip() > today.strftime("%H:%M") or stop_time.strip() > today.strftime("%H:%M"):
                 schedule_today_temp += (start_time +" - " + stop_time + "\n")
 
         schedule_today = schedule_today_temp
@@ -33,13 +34,14 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
             schedule_today = schedule[today.strftime("%a, %d %b")]['S']
             #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
             schedule_today_temp = ''
+            #tokenise on , then - 
             for time in schedule_today.split(","):
                 start_time, stop_time = time.split("-")
             
-                if stop_time.strip() > today.strftime("%H:%M"):
+                if start_time.strip() > today.strftime("%H:%M") or stop_time.strip() > today.strftime("%H:%M"):
                     schedule_today_temp += (start_time +" - " + stop_time + "\n")
 
-            schedule_today = schedule_today_temp
+                schedule_today = schedule_today_temp
         except:
             print("no schedule set for today ")
             schedule_today = "NO LOADSHEDDING"
@@ -48,6 +50,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         print("trying to read the tomorrow schedule with NO 'S' ")
         schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
         schedule_tomorrow_temp = ''
+        #pretty print with new lines
         for time in schedule_tomorrow.split(","):
             start_time, stop_time = time.split("-")
             schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
@@ -57,6 +60,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         try:
             print("trying to read the tomorrow schedule with 'S' ")
             schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
+            #pretty print with new lines
             schedule_tomorrow_temp = ''
             for time in schedule_tomorrow.split(","):
                 start_time, stop_time = time.split("-")
