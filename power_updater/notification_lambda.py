@@ -8,7 +8,7 @@ load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 TelegramBotToken = os.environ['TelegramBotToken']
 TelegramChatID = os.environ['TelegramChatID']
 
-today = datetime.datetime.now()
+today = datetime.datetime.now() + datetime.timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA.
 tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
 
 def PostToTelegram_Schedule(area, load_stage, schedule):
@@ -18,7 +18,6 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     try:
         print("trying to read the today schedule with NO 'S' ")
         schedule_today = schedule[today.strftime("%a, %d %b")]
-
         #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
         schedule_today_temp = ''
         for time in schedule_today.split(","):
@@ -32,6 +31,15 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         try:
             print("trying to read the today schedule with 'S' ")
             schedule_today = schedule[today.strftime("%a, %d %b")]['S']
+            #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
+            schedule_today_temp = ''
+            for time in schedule_today.split(","):
+                start_time, stop_time = time.split("-")
+            
+                if stop_time.strip() > today.strftime("%H:%M"):
+                    schedule_today_temp += (start_time +" - " + stop_time + "\n")
+
+            schedule_today = schedule_today_temp
         except:
             print("no schedule set for today ")
             schedule_today = "NO LOADSHEDDING"
@@ -39,10 +47,22 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     try:
         print("trying to read the tomorrow schedule with NO 'S' ")
         schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
+        schedule_tomorrow_temp = ''
+        for time in schedule_tomorrow.split(","):
+            start_time, stop_time = time.split("-")
+            schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
+
+        schedule_tomorrow = schedule_tomorrow_temp
     except:
         try:
             print("trying to read the tomorrow schedule with 'S' ")
             schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
+            schedule_tomorrow_temp = ''
+            for time in schedule_tomorrow.split(","):
+                start_time, stop_time = time.split("-")
+                schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
+
+            schedule_tomorrow = schedule_tomorrow_temp
         except:
             print("no schedule set for tomorrow ")
             schedule_tomorrow = "NO LOADSHEDDING"
