@@ -20,11 +20,14 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         schedule_today = schedule[today.strftime("%a, %d %b")]
 
         #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
+        schedule_today_temp = ''
         for time in schedule_today.split(","):
             start_time, stop_time = time.split("-")
         
             if stop_time.strip() > today.strftime("%H:%M"):
-                schedule_today += (start_time +" - " + stop_time + "\n")
+                schedule_today_temp += (start_time +" - " + stop_time + "\n")
+
+        schedule_today = schedule_today_temp
     except:
         try:
             print("trying to read the today schedule with 'S' ")
