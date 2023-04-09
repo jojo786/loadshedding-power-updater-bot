@@ -28,6 +28,8 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 schedule_today_temp += (start_time +" - " + stop_time + "\n")
 
         schedule_today = schedule_today_temp
+        if not schedule_today: #if all the time slots have passed
+            schedule_today = 'NO LOADSHEDDING'
     except:
         try:
             print("trying to read the today schedule with 'S' ")
@@ -42,6 +44,8 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                     schedule_today_temp += (start_time +" - " + stop_time + "\n")
 
                 schedule_today = schedule_today_temp
+                if not schedule_today:
+                    schedule_today = 'NO LOADSHEDDING'
         except:
             print("no schedule set for today ")
             schedule_today = "NO LOADSHEDDING"
@@ -90,7 +94,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
 def PostToTelegram_Stage(area, load_stage):
 
     if int(load_stage) == 0:
-       load_stage = "0 (No Loadshedding)"
+       load_stage = "0 (NO LOADSHEDDING)"
         
     load_message = (area + " Loadshedding Notice \n"
         + today.strftime("%a, %d %b") + "  \n"
