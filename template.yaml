@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  PowerUpdater: Eskom Load Shedding Telegram Bot
+  PowerUpdater: Eskom Loadshedding Telegram Bot
 
 Globals:
   Function:
@@ -13,22 +13,10 @@ Globals:
     ReservedConcurrentExecutions: 1
 
 Parameters:
-    StageEnv:
-      Type: String
-      AllowedValues:
-        - dev
-        - prod
     TelegramBotToken:
       Type: String
     TelegramChatID:
       Type: String
-
-Mappings:
-  StageMappings:
-    dev:
-      stage: dev
-    prod:
-      stage: prod
 
 Resources:
   PowerUpdaterGetStageFunction:
@@ -81,23 +69,12 @@ Resources:
       Handler: notification_lambda.lambda_handler
       Environment:
         Variables:
-          stage: !FindInMap [StageMappings, !Ref StageEnv, stage]
           PowerUpdaterTableName: !Ref PowerUpdaterTable
           TelegramBotToken: !Ref TelegramBotToken
           TelegramChatID: !Ref TelegramChatID
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
-        - Statement:
-          -
-            Effect: "Allow"
-            Action:
-              - ssm:GetParameters
-              - ssm:GetParameter
-              - ssm:GetParametersByPath
-            Resource:
-              - '*'
-              - 'arn:aws:ssm:::parameter/telegramtasweerbot/*'
       Events:
         Stream: #invoked when the stage changes, need to send telegram updates
           Type: DynamoDB
@@ -113,6 +90,26 @@ Resources:
           Properties:
             Schedule: cron(0 3,7,11,15,19 * * ? *) #run 4 hourly, at specific hours  in GMT
 
+  PowerUpdaterTelegramHandlerFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: power_updater/
+      Handler: telegramhandler_lambda.lambda_handler
+      Environment:
+        Variables:
+          PowerUpdaterTableName: !Ref PowerUpdaterTable
+          TelegramBotToken: !Ref TelegramBotToken
+          TelegramChatID: !Ref TelegramChatID
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PowerUpdaterTable
+      Events:
+        TelegramWebHook:
+          Type: Api 
+          Properties:
+            Path: /
+            Method: POST
+  
   PowerUpdaterTable:
     Type: AWS::DynamoDB::Table
     Properties: 
