@@ -38,8 +38,6 @@ Once you have forked this repo, GitHub Actions CI/CD pipeline will run on a `git
 
 
 ## TODO
-- If stage changes, re-pull the schedule
-- Publish the schedule for more days
+
 - Even though area is a field in the DB, need to configure it properly for multiple areas
-- Add ability to ask the bot questions: latest schedule, stage
 - Pull announcements from https://twitter.com/Eskom_SA
