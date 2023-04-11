@@ -31,12 +31,13 @@ The bot also supports you asking it for the schedule on an ad-hoc basis using th
 5. Every 2 hours, `notification_lambda.py` Lambda function gets invoked via cron schedule (EventBridge rule) to send loadshedding reminders. It reads the latest stage and schedule from DynamoDB, and posts to Telegram
 
 ## How to run it
-Once you have forked this repo, GitHub Actions CI/CD pipeline will run on a `git push`. But if you want to build and deploy to AWS using AWS SAM locally, then:
+To build and deploy to AWS using AWS SAM, then:
 
 - Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html), and  [configure it](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-config)
 - Install [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
-- Create an SSM Parameter to store the Telegram token. `aws ssm put-parameter --region eu-west-1 --name "/telegramtasweerbot/telegram/dev/bot_token" --type "SecureString" --value "12334342:ABCD12432423" --overwrite`
-- Run `sam build && sam deploy --parameter-overrides --parameter-overrides StageEnv=dev` to run it for dev. Similiar for prod.
+- Run `sam build && sam deploy` to deploy to AWS
+- Update the [Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) for `PowerUpdaterTableName`, `TelegramBotToken` and `TelegramChatID`
+- Update your Telegram bot to change from polling to Webhook, by pasting this URL in your browser, or curl'ing it - Use your own bot token and Lambda URL endpoint: https://api.telegram.org/bot12334342:ABCD124324234/setWebHook?url=https://1fgfgfd56.lambda-url.eu-west-1.on.aws/. You can check that it was set correctly by going to https://api.telegram.org/bot12334342:ABCD124324234/getWebhookInfo, which should include the url of your Lambda URL, as well as any errors Telegram is encounterting calling your bot on that API.
 
 
 ## TODO
