@@ -91,7 +91,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     else:
         print("Stage 0 - no need to send a schedule")
 
-def PostToTelegram_Stage(area, load_stage):
+def PostToTelegram_StageChange(area, load_stage):
 
     if int(load_stage) == 0:
        load_stage = "0 (NO LOADSHEDDING)"
@@ -113,20 +113,21 @@ def ProcessDynamoStreamEvent(event):
 
         try:
             print("trying to read from Dynamo Event Stream")
-            load_stage = record['dynamodb']['NewImage']['load_stage']['N']
-            print("Load stage: " + str(load_stage))
-            PostToTelegram_Stage(area, load_stage)
+            new_load_stage = record['dynamodb']['NewImage']['load_stage']['N']
+            print("New Load stage: " + str(new_load_stage))
+            old_load_stage = record['dynamodb']['OldImage']['load_stage']['N']
+            print("Old Load stage: " + str(old_load_stage))
+            
+            #Only post to telegram if the stage has changed
+            if not (old_load_stage == new_load_stage):
+                PostToTelegram_StageChange(area, new_load_stage)
+                
+                schedule = record['dynamodb']['NewImage']['schedule']
+                PostToTelegram_Schedule(area, new_load_stage, schedule['M'])
         except Exception as err:
             print("Exception: ProcessDynamoStreamEvent")
             print (err)
-            #load_stage = record['dynamodb']['OldImage']['load_stage']['N']
-            
-        try:   
-            schedule = record['dynamodb']['NewImage']['schedule']
-        except:
-            schedule = record['dynamodb']['OldImage']['schedule']
-
-        PostToTelegram_Schedule(area, load_stage, schedule['M'])
+             
 
 def CheckSchedule():
     print ("CheckSchedule")
@@ -142,7 +143,7 @@ def lambda_handler(event, context):
     print("Event: " )
     print(event)
     try:
-        print("Trying to see if this is a DynamoStreamEvent")
+        print("Trying to see if this is a DynamoStreamEvent") #if this is a DynamoStreamEvent, then the stage has been updated in Dynamo, so we need to check if the stage has changed. 
         if event['Records'][0]['eventSource'] == 'aws:dynamodb':
             ProcessDynamoStreamEvent(event)
     except Exception as err:
@@ -150,4 +151,4 @@ def lambda_handler(event, context):
         print (err)
         print("this is a EventEngineEvent event (cron) or manual testing")
         #if event['source'] == 'aws.events':
-        CheckSchedule()
+        CheckSchedule() #this is a regular scheduled event, so get the stage and scheduel from Dynamo, and post to Telegram.
