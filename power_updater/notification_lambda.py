@@ -26,11 +26,10 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         start_time, stop_time = time.split("-")
     
         if start_time.strip() > today.strftime(TimeFormat) or stop_time.strip() > today.strftime(TimeFormat):
-            #if the duration of one the loadshedding times is greater than 4 hours, then include duration in the message
             tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
             print (tdelta)
-            if (tdelta > timedelta(hours=4)): #if the duration of one the loadshedding times is greater than 4 hours, then include duration in the message
-                schedule_today_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), TimeFormat) + ")" + "\n")
+            if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
+                schedule_today_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H") + " hours)" + "\n")
             else:
                 schedule_today_temp += (start_time +" - " + stop_time + "\n")
 
@@ -47,8 +46,8 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         start_time, stop_time = time.split("-")
         tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
         print (tdelta)
-        if (tdelta > timedelta(hours=4)): #if the duration of one the loadshedding times is greater than 4 hours, then include duration in the message
-            schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), TimeFormat) + ")" + "\n")
+        if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
+            schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H") + " hours)" + "\n")
         else:
             schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
 
@@ -60,7 +59,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         load_message = (area + " Loadshedding Notice \n"
         "Stage " + str(load_stage) + "  \n"
         "The loadshedding schedule for today - " + today.strftime("%a, %d %b") + ": \n" 
-        " " + schedule_today + "  \n" +
+        "" + schedule_today + "  \n" +
         "The loadshedding schedule for tomorrow - " + tomorrow.strftime("%a, %d %b") + ": \n" 
         " " + schedule_tomorrow)
 
