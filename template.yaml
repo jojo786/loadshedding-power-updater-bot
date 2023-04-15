@@ -91,9 +91,12 @@ Resources:
           PowerUpdaterTableName: !Ref PowerUpdaterTable
           TelegramBotToken: !Ref TelegramBotToken
           TelegramChatID: !Ref TelegramChatID
+          TelegramScheduleCommandStateMachine: !GetAtt TelegramScheduleCommandStateMachine.Arn
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt TelegramScheduleCommandStateMachine.Name
       Events:
         TelegramWebHook:
           Type: Api 
@@ -113,3 +116,19 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
+
+  TelegramScheduleCommandStateMachine:
+    Type: AWS::Serverless::StateMachine 
+    Properties:
+      DefinitionUri: statemachine/telegram_command_schedule.asl.json
+      DefinitionSubstitutions:
+        PowerUpdaterGetStageFunctionArn: !GetAtt PowerUpdaterGetStageFunction.Arn
+        PowerUpdaterGetScheduleFunctionArn: !GetAtt PowerUpdaterGetScheduleFunction.Arn
+        PowerUpdaterNotificationFunctionArn: !GetAtt PowerUpdaterNotificationFunction.Arn
+      Policies: 
+      - LambdaInvokePolicy:
+          FunctionName: !Ref PowerUpdaterGetStageFunction
+      - LambdaInvokePolicy:
+          FunctionName: !Ref PowerUpdaterGetScheduleFunction
+      - LambdaInvokePolicy:
+          FunctionName: !Ref PowerUpdaterNotificationFunction

@@ -1,0 +1,60 @@
+{
+    "Comment": "State machine invoked on a telegram command - /schedule - that gets the latest stage and schedule from Eskom, then posts to Telegram",
+    "StartAt": "powerUpdater:GetStage",
+    "States": {
+      "powerUpdater:GetStage": {
+        "Type": "Task",
+        "Resource": "${PowerUpdaterGetStageFunctionArn}",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "Next": "powerUpdater:GetSchedule"
+      },
+      "powerUpdater:GetSchedule": {
+        "Type": "Task",
+        "Resource": "${PowerUpdaterGetScheduleFunctionArn}",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "Next": "powerUpdater:TelegramNotification"
+      },
+      "powerUpdater:TelegramNotification": {
+        "Type": "Task",
+        "Resource": "${PowerUpdaterNotificationFunctionArn}",
+        "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 6,
+            "BackoffRate": 2
+          }
+        ],
+        "End": true
+      }
+    }
+  }
