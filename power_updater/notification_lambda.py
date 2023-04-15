@@ -1,79 +1,59 @@
 import requests
 import boto3
 import os
-import datetime
+from datetime import datetime, timedelta
 
 dynamodb = boto3.resource('dynamodb')
 load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 TelegramBotToken = os.environ['TelegramBotToken']
 TelegramChatID = os.environ['TelegramChatID']
 
-today = datetime.datetime.now() + datetime.timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA.
-tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+today = datetime.now() + timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA.
+tomorrow = datetime.now() + timedelta(days=1)
+TimeFormat = "%H:%M"
 
 def PostToTelegram_Schedule(area, load_stage, schedule):
     print ("PostToTelegram_Schedule")
     print(schedule)
     
-    try:
-        print("trying to read the today schedule with NO 'S' ")
-        schedule_today = schedule[today.strftime("%a, %d %b")]
-        #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
-        schedule_today_temp = ''
-         #tokenise on , then - 
-        for time in schedule_today.split(","):
-            start_time, stop_time = time.split("-")
-        
-            if start_time.strip() > today.strftime("%H:%M") or stop_time.strip() > today.strftime("%H:%M"):
+    
+    print("trying to read the today schedule with NO 'S' ")
+    schedule_today = schedule[today.strftime("%a, %d %b")]
+    #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
+    schedule_today_temp = ''
+        #tokenise on , then - 
+    for time in schedule_today.split(","):
+        start_time, stop_time = time.split("-")
+    
+        if start_time.strip() > today.strftime(TimeFormat) or stop_time.strip() > today.strftime(TimeFormat):
+            #if the duration of one the loadshedding times is greater than 4 hours, then include duration in the message
+            tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
+            print (tdelta)
+            if (tdelta > timedelta(hours=4)): #if the duration of one the loadshedding times is greater than 4 hours, then include duration in the message
+                schedule_today_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), TimeFormat) + ")" + "\n")
+            else:
                 schedule_today_temp += (start_time +" - " + stop_time + "\n")
 
-        schedule_today = schedule_today_temp
-        if not schedule_today: #if all the time slots have passed
-            schedule_today = 'NO LOADSHEDDING'
-    except:
-        try:
-            print("trying to read the today schedule with 'S' ")
-            schedule_today = schedule[today.strftime("%a, %d %b")]['S']
-            #check to see if one of the load-shedding times has already passed, so it can be excluded from the schedule
-            schedule_today_temp = ''
-            #tokenise on , then - 
-            for time in schedule_today.split(","):
-                start_time, stop_time = time.split("-")
-            
-                if start_time.strip() > today.strftime("%H:%M") or stop_time.strip() > today.strftime("%H:%M"):
-                    schedule_today_temp += (start_time +" - " + stop_time + "\n")
-
-                schedule_today = schedule_today_temp
-                if not schedule_today:
-                    schedule_today = 'NO LOADSHEDDING'
-        except:
-            print("no schedule set for today ")
-            schedule_today = "NO LOADSHEDDING"
-
-    try:
-        print("trying to read the tomorrow schedule with NO 'S' ")
-        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
-        schedule_tomorrow_temp = ''
-        #pretty print with new lines
-        for time in schedule_tomorrow.split(","):
-            start_time, stop_time = time.split("-")
+    schedule_today = schedule_today_temp
+    if not schedule_today: #if all the time slots have passed
+        schedule_today = 'NO LOADSHEDDING'
+  
+    
+    print("trying to read the tomorrow schedule with NO 'S' ")
+    schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
+    schedule_tomorrow_temp = ''
+    #pretty print with new lines
+    for time in schedule_tomorrow.split(","):
+        start_time, stop_time = time.split("-")
+        tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
+        print (tdelta)
+        if (tdelta > timedelta(hours=4)): #if the duration of one the loadshedding times is greater than 4 hours, then include duration in the message
+            schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), TimeFormat) + ")" + "\n")
+        else:
             schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
 
-        schedule_tomorrow = schedule_tomorrow_temp
-    except:
-        try:
-            print("trying to read the tomorrow schedule with 'S' ")
-            schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
-            #pretty print with new lines
-            schedule_tomorrow_temp = ''
-            for time in schedule_tomorrow.split(","):
-                start_time, stop_time = time.split("-")
-                schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
-
-            schedule_tomorrow = schedule_tomorrow_temp
-        except:
-            print("no schedule set for tomorrow ")
-            schedule_tomorrow = "NO LOADSHEDDING"
+    schedule_tomorrow = schedule_tomorrow_temp
+    
 
     if int(load_stage) > 0:
         #print(schedule[today.strftime("%a, %d %b")]['S'])

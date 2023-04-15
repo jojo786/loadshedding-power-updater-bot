@@ -88,7 +88,6 @@ Resources:
       Handler: telegramhandler_lambda.lambda_handler
       Environment:
         Variables:
-          PowerUpdaterTableName: !Ref PowerUpdaterTable
           TelegramBotToken: !Ref TelegramBotToken
           TelegramChatID: !Ref TelegramChatID
           TelegramScheduleCommandStateMachine: !GetAtt TelegramScheduleCommandStateMachine.Arn
