@@ -16,42 +16,52 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     print ("PostToTelegram_Schedule")
     print(schedule)
     
-    
-    print("trying to read the today schedule with NO 'S' ")
-    schedule_today = schedule[today.strftime("%a, %d %b")]
-    #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
-    schedule_today_temp = ''
-        #tokenise on , then - 
-    for time in schedule_today.split(","):
-        start_time, stop_time = time.split("-")
-    
-        if start_time.strip() > today.strftime(TimeFormat) or stop_time.strip() > today.strftime(TimeFormat):
+    try:
+        print("trying to read the today schedule with NO 'S' ")
+        schedule_today = schedule[today.strftime("%a, %d %b")]
+    except:
+        print("trying to read the today schedule with 'S' ")
+        schedule_today = schedule[today.strftime("%a, %d %b")]['S']
+    else:
+        #pretty print with new lines
+        schedule_today_temp = ''
+        for time in schedule_today.split(","): #tokenise on , then - 
+            start_time, stop_time = time.split("-")
+            #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
+            if start_time.strip() > today.strftime(TimeFormat) or stop_time.strip() > today.strftime(TimeFormat):
+                #calculate duration of each slot
+                tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
+                print (tdelta)
+                if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
+                    schedule_today_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S")))), "%H") + " hours)" + "\n")
+                else:
+                    schedule_today_temp += (start_time +" - " + stop_time + "\n")
+
+        schedule_today = schedule_today_temp
+        if not schedule_today: #if all the time slots have passed
+            schedule_today = 'NO LOADSHEDDING'
+         
+
+    try:
+        print("trying to read the tomorrow schedule with NO 'S' ")
+        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
+    except:
+        print("trying to read the tomorrow schedule with 'S' ")
+        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
+    else:
+        #pretty print with new lines
+        schedule_tomorrow_temp = ''
+        for time in schedule_tomorrow.split(","): #tokenise on , then - 
+            start_time, stop_time = time.split("-")
+            #calculate duration of each slot
             tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
             print (tdelta)
             if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
-                schedule_today_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H") + " hours)" + "\n")
+                schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S")))), "%H") + " hours)" + "\n")
             else:
-                schedule_today_temp += (start_time +" - " + stop_time + "\n")
+                schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
 
-    schedule_today = schedule_today_temp
-    if not schedule_today: #if all the time slots have passed
-        schedule_today = 'NO LOADSHEDDING'
-  
-    
-    print("trying to read the tomorrow schedule with NO 'S' ")
-    schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
-    schedule_tomorrow_temp = ''
-    #pretty print with new lines
-    for time in schedule_tomorrow.split(","):
-        start_time, stop_time = time.split("-")
-        tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
-        print (tdelta)
-        if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
-            schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H") + " hours)" + "\n")
-        else:
-            schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
-
-    schedule_tomorrow = schedule_tomorrow_temp
+        schedule_tomorrow = schedule_tomorrow_temp
     
 
     if int(load_stage) > 0:
