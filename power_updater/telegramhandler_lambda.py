@@ -16,7 +16,7 @@ stepfunctions = boto3.client('stepfunctions')
 
 async def health(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Start health command")
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Was-salaam")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm here")
 
 async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Start Schedule command - Step Functions")

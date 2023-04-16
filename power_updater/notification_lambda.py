@@ -17,12 +17,12 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     print(schedule)
     
     try:
+        print("trying to read the today schedule WITH 'S' ")
+        schedule_today = schedule[today.strftime("%a, %d %b")]['S']
+    except:
         print("trying to read the today schedule with NO 'S' ")
         schedule_today = schedule[today.strftime("%a, %d %b")]
-    except:
-        print("trying to read the today schedule with 'S' ")
-        schedule_today = schedule[today.strftime("%a, %d %b")]['S']
-    else:
+    finally:
         #pretty print with new lines
         schedule_today_temp = ''
         for time in schedule_today.split(","): #tokenise on , then - 
@@ -33,7 +33,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
                 print (tdelta)
                 if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
-                    schedule_today_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S")))), "%H") + " hours)" + "\n")
+                    schedule_today_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours)" + "\n")
                 else:
                     schedule_today_temp += (start_time +" - " + stop_time + "\n")
 
@@ -43,12 +43,12 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
          
 
     try:
+        print("trying to read the tomorrow schedule WITH 'S' ")
+        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
+    except:
         print("trying to read the tomorrow schedule with NO 'S' ")
         schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
-    except:
-        print("trying to read the tomorrow schedule with 'S' ")
-        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
-    else:
+    finally:
         #pretty print with new lines
         schedule_tomorrow_temp = ''
         for time in schedule_tomorrow.split(","): #tokenise on , then - 
@@ -57,7 +57,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
             tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
             print (tdelta)
             if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
-                schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S")))), "%H") + " hours)" + "\n")
+                schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours)" + "\n")
             else:
                 schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
 
