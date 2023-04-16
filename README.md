@@ -31,10 +31,11 @@ The bot also supports you asking it for the schedule on an ad-hoc basis using th
 5. Every 2 hours, `notification_lambda.py` Lambda function gets invoked via cron schedule (EventBridge rule) to send loadshedding reminders. It reads the latest stage and schedule from DynamoDB, and posts to Telegram
 
 ## How to run it
-Use [AWS SAM](https://aws.amazon.com/serverless/sam/) to build and deploy to AWS:
+- Create your bot using BotFather, and note the token, e.g. 12334342:ABCD124324234
+- Use [AWS SAM](https://aws.amazon.com/serverless/sam/) to build and deploy to AWS:
 
-- Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html), and  [configure it](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-config)
-- Install [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
+- - Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html), and  [configure it](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-config)
+- - Install [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 - To build and deploy your application for the first time, run the following in your shell:
 
 ```bash
