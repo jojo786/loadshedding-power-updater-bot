@@ -3,23 +3,23 @@ Telegram Bot that provides Eskom Loadshedding updates - running on AWS Serverles
 
 Loosely-based off https://github.com/daffster/mypowerstats, but completly re-written to run as a Telegram bot, running on AWS Lambda and DynamoDB, deployed using AWS SAM.
 
-Pulls loadshedding stage and schedule info from https://loadshedding.eskom.co.za/LoadShedding/, and makes it available as a Telegram bot. This bot can be added to your Telegram community groups/channels, and will post the schedule for your area.
+Pulls loadshedding stage and schedule info from https://loadshedding.eskom.co.za/LoadShedding/, and makes it available as a Telegram bot. You can interact with the bot directly and request the loadshedding using the `/schedule` command, and/or the bot can be added to your Telegram community groups/channels, and it will post the schedule for your area.
 
 The bot will post the following information five times a day (or depending on the EventBridge Schedule):
 ```
 Buccleuch Loadshedding Notice 
-Stage 3  
-The loadshedding schedule for today - Mon, 03 Apr: 
-  14:00  -  16:30
+Stage 6  
+The loadshedding schedule for today - Sun, 16 Apr: 
+ 16:00  -  20:30 (4 hours)
   
-The loadshedding schedule for tomorrow - Tue, 04 Apr: 
+The loadshedding schedule for tomorrow - Mon, 17 Apr: 
  06:00  -  08:30
- 14:00  -  16:30
- 22:00  -  00:30
+ 14:00  -  18:30 (4 hours)
+ 22:00  -  02:30
 
 ```
 
-The bot also supports you asking it for the schedule on an ad-hoc basis using the `/schedule` command
+The bot also supports you asking it for the schedule on an ad-hoc basis using the `/schedule` command.
 
 ## Architecture 
 ![architecture](docs/Architecture.png)
