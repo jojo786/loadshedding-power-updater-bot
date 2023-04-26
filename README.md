@@ -22,6 +22,9 @@ The loadshedding schedule for tomorrow - Mon, 17 Apr:
 The bot also supports you asking it for the schedule on an ad-hoc basis using the `/schedule` command.
 
 ## Architecture 
+
+For a detailed view of the architecture, [read my blog about how this uses choreography and orchestration](https://hacksaw.co.za/blog/choreography-and-orchestration-using-aws-serverless/)
+
 ![architecture](docs/Architecture.png)
 
 1. `get_schedule_lambda.py` Lambda function gets invoked via cron schedule (EventBridge rule) to hit the [Eskom loadshedding status endpoint](https://loadshedding.eskom.co.za/LoadShedding/GetStatus) and get the loadshedding stage. This is stored on Dynamo, for each area/location/suburb.
