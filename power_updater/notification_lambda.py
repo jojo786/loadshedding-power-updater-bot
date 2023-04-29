@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 dynamodb = boto3.resource('dynamodb')
 load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 lambda_client = boto3.client('lambda')
-get_schedule = dynamodb.Table(os.environ["PowerUpdaterGetScheduleFunction"])
+get_schedule = os.environ["PowerUpdaterGetScheduleFunction"]
 TelegramBotToken = os.environ['TelegramBotToken']
 TelegramChatID = os.environ['TelegramChatID']
 

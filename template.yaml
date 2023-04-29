@@ -61,6 +61,7 @@ Resources:
       Environment:
         Variables:
           PowerUpdaterTableName: !Ref PowerUpdaterTable
+          PowerUpdaterGetScheduleFunction: !Ref PowerUpdaterGetScheduleFunction
           TelegramBotToken: !Ref TelegramBotToken
           TelegramChatID: !Ref TelegramChatID
       Policies:
