@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 
 dynamodb = boto3.resource('dynamodb')
 load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
+lambda_client = boto3.client('lambda')
+get_schedule = dynamodb.Table(os.environ["PowerUpdaterGetScheduleFunction"])
 TelegramBotToken = os.environ['TelegramBotToken']
 TelegramChatID = os.environ['TelegramChatID']
 
@@ -111,6 +113,10 @@ def ProcessDynamoStreamEvent(event):
             if not (old_load_stage == new_load_stage):
                 PostToTelegram_StageChange(area, new_load_stage)
                 
+                #Invoke get_schedule_lambda function sync
+                lambda_client.invoke(FunctionName='get_schedule', 
+                     InvocationType='RequestResponse',
+                     Payload={})
                 schedule = record['dynamodb']['NewImage']['schedule']
                 PostToTelegram_Schedule(area, new_load_stage, schedule['M'])
         except Exception as err:
@@ -136,8 +142,5 @@ def lambda_handler(event, context):
         if event['Records'][0]['eventSource'] == 'aws:dynamodb':
             ProcessDynamoStreamEvent(event)
     except Exception as err:
-        print("Exception: lambda_handler")
-        print (err)
-        print("this is a EventEngineEvent event (cron) or manual testing")
-        #if event['source'] == 'aws.events':
+        print("Exception: lambda_handler - this is a EventEngineEvent event (cron) or manual testing")
         CheckSchedule() #this is a regular scheduled event, so get the stage and scheduel from Dynamo, and post to Telegram.
