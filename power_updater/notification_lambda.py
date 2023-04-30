@@ -4,9 +4,9 @@ import os
 from datetime import datetime, timedelta
 
 dynamodb = boto3.resource('dynamodb')
-load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
+load_table = dynamodb.Table(os.environ['PowerUpdaterTableName'])
 lambda_client = boto3.client('lambda')
-get_schedule = os.environ["PowerUpdaterGetScheduleFunction"]
+get_schedule = os.environ['PowerUpdaterGetScheduleFunction']
 TelegramBotToken = os.environ['TelegramBotToken']
 TelegramChatID = os.environ['TelegramChatID']
 
@@ -43,7 +43,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         if not schedule_today: #if all the time slots have passed
             schedule_today = 'NO LOADSHEDDING'
          
-
+    schedule_tomorrow = ''
     try:
         print("trying to read the tomorrow schedule WITH 'S' ")
         schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
@@ -116,7 +116,7 @@ def ProcessDynamoStreamEvent(event):
                 #Invoke get_schedule_lambda function sync
                 lambda_client.invoke(FunctionName='get_schedule', 
                      InvocationType='RequestResponse',
-                     Payload={})
+                     Payload=json.dumps({}))
                 schedule = record['dynamodb']['NewImage']['schedule']
                 PostToTelegram_Schedule(area, new_load_stage, schedule['M'])
         except Exception as err:
