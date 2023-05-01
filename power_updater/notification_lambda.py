@@ -25,20 +25,20 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         print("trying to read the today schedule WITH 'S' ")
         schedule_today = schedule[today.strftime("%a, %d %b")]['S']
     except:
-        print("trying to read the today schedule with NO 'S' ")
-        schedule_today = schedule[today.strftime("%a, %d %b")]
+        try:
+            print("trying to read the today schedule with NO 'S' ")
+            schedule_today = schedule[today.strftime("%a, %d %b")]
+        except:
+             print("could NOT read the today schedule with NO 'S' ")
     finally:
-        print("schedule_today")
-        print(schedule_today)
-        print(len(schedule_today))
         if not schedule_today: #for certain stages, like stage 1, there are no loadshedding on some days
-            schedule_today = 'NO LOADSHEDDING'
+            schedule_today = 'NO LOADSHEDDING\n'
         else:
             #pretty print with new lines
             for time in schedule_today.split(","): #tokenise on , then - 
                 start_time, stop_time = time.split("-")
                 #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
-                if start_time.strip() > today.strftime(TimeFormat) or stop_time.strip() > today.strftime(TimeFormat):
+                if ((start_time.strip() > today.strftime(TimeFormat)) or (stop_time.strip() > today.strftime(TimeFormat))):
                     #calculate duration of each slot
                     tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
                     print (tdelta)
@@ -49,7 +49,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
 
         schedule_today = schedule_today_temp
         if not schedule_today: #if all the time slots have passed
-            schedule_today = 'NO LOADSHEDDING'
+            schedule_today = 'NO LOADSHEDDING\n'
          
     schedule_tomorrow = ''
     schedule_tomorrow_temp = ''
@@ -58,8 +58,11 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         print("trying to read the tomorrow schedule WITH 'S' ")
         schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
     except:
-        print("trying to read the tomorrow schedule with NO 'S' ")
-        schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
+        try:
+            print("trying to read the tomorrow schedule with NO 'S' ")
+            schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
+        except:
+            print("could NOT read the tomorrow schedule with NO 'S' ")
     finally:
         if not schedule_tomorrow.strip: #for certain stages, like stage 1, there are no loadshedding on some days
             schedule_tomorrow = 'NO LOADSHEDDING'
@@ -70,6 +73,9 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 #calculate duration of each slot
                 tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
                 print (tdelta)
+                #if the stop time is in the next day
+                #tday, ttime = str(tdelta).split(",")
+                #print (ttime)
                 if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
                     schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours)" + "\n")
                 else:
