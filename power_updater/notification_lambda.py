@@ -2,6 +2,7 @@ import requests
 import boto3
 import os
 from datetime import datetime, timedelta
+import json
 
 dynamodb = boto3.resource('dynamodb')
 load_table = dynamodb.Table(os.environ['PowerUpdaterTableName'])
@@ -31,7 +32,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         except:
              print("could NOT read the today schedule with NO 'S' ")
     finally:
-        if not schedule_today: #for certain stages, like stage 1, there are no loadshedding on some days
+        if not schedule_today.strip(): #for certain stages, like stage 1, there are no loadshedding on some days
             schedule_today = 'NO LOADSHEDDING\n'
         else:
             #pretty print with new lines
@@ -64,7 +65,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         except:
             print("could NOT read the tomorrow schedule with NO 'S' ")
     finally:
-        if not schedule_tomorrow.strip: #for certain stages, like stage 1, there are no loadshedding on some days
+        if not schedule_tomorrow.strip(): #for certain stages, like stage 1, there are no loadshedding on some days
             schedule_tomorrow = 'NO LOADSHEDDING'
         else:
             #pretty print with new lines
@@ -89,7 +90,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         load_message = (area + " Loadshedding Notice \n"
         "Stage " + str(load_stage) + "  \n"
         "The loadshedding schedule for today - " + today.strftime("%a, %d %b") + ": \n" 
-        "" + schedule_today + "  \n" +
+        " " + schedule_today + "  \n" +
         "The loadshedding schedule for tomorrow - " + tomorrow.strftime("%a, %d %b") + ": \n" 
         " " + schedule_tomorrow)
 
