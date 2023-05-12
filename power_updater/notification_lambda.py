@@ -132,11 +132,14 @@ def ProcessDynamoStreamEvent(event):
             if not (old_load_stage == new_load_stage):
                 PostToTelegram_StageChange(area, new_load_stage)
                 
-                #Invoke get_schedule_lambda function sync
-                lambda_client.invoke(FunctionName='get_schedule', 
+                #Invoke get_schedule_lambda function sync to make sure we pull the latest schedule from Eskom for the new stage
+                lambda_client.invoke(FunctionName=get_schedule, 
                      InvocationType='RequestResponse',
                      Payload=json.dumps({}))
-                schedule = record['dynamodb']['NewImage']['schedule']
+                #read the new schedule from DDB
+                response = load_table.get_item(Key={'area': 'Buccleuch'})
+                schedule = response['Item']['schedule']
+                
                 PostToTelegram_Schedule(area, new_load_stage, schedule['M'])
         except Exception as err:
             print("Exception: ProcessDynamoStreamEvent")
