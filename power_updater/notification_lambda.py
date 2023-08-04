@@ -66,7 +66,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
             print("could NOT read the tomorrow schedule with NO 'S' ")
     finally:
         if not schedule_tomorrow.strip(): #for certain stages, like stage 1, there are no loadshedding on some days
-            schedule_tomorrow = 'NO LOADSHEDDING'
+            schedule_tomorrow_temp = 'NO LOADSHEDDING'
         else:
             #pretty print with new lines
             for time in schedule_tomorrow.split(","): #tokenise on , then - 
