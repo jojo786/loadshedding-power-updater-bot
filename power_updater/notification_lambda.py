@@ -13,7 +13,7 @@ TelegramChatID = os.environ['TelegramChatID']
 
 today = datetime.now() + timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA.
 tomorrow = datetime.now() + timedelta(days=1)
-TimeFormat = "%H:%M"
+TimeFormat = "%I:%M%p" #12 hour format, with AM/PM
 
 def PostToTelegram_Schedule(area, load_stage, schedule):
     print ("PostToTelegram_Schedule")
@@ -38,6 +38,10 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
             #pretty print with new lines
             for time in schedule_today.split(","): #tokenise on , then - 
                 start_time, stop_time = time.split("-")
+                #convert from 24 hour format to 12 hour format
+                start_time = datetime.strftime(datetime.strptime(start_time.strip(), "%H:%M"), "%I:%M%p")
+                stop_time = datetime.strftime(datetime.strptime(str(stop_time.strip()), "%H:%M"), "%I:%M%p")
+                                
                 #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
                 if ((start_time.strip() > today.strftime(TimeFormat)) or (stop_time.strip() > today.strftime(TimeFormat))):
                     #calculate duration of each slot
@@ -71,6 +75,10 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
             #pretty print with new lines
             for time in schedule_tomorrow.split(","): #tokenise on , then - 
                 start_time, stop_time = time.split("-")
+                #convert from 24 hour format to 12 hour format
+                start_time = datetime.strftime(datetime.strptime(start_time.strip(), "%H:%M"), "%I:%M%p")
+                stop_time = datetime.strftime(datetime.strptime(str(stop_time.strip()), "%H:%M"), "%I:%M%p")
+                
                 #calculate duration of each slot
                 tdelta = datetime.strptime(stop_time.strip(), TimeFormat) - datetime.strptime(start_time.strip(), TimeFormat)
                 print (tdelta)
