@@ -11,9 +11,9 @@ get_schedule = os.environ['PowerUpdaterGetScheduleFunction']
 TelegramBotToken = os.environ['TelegramBotToken']
 TelegramChatID = os.environ['TelegramChatID']
 
-today = datetime.now() + timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA.
+today = datetime.now() + timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA (GMT+2).
 tomorrow = datetime.now() + timedelta(days=1)
-TimeFormat = "%I:%M%p" #12 hour format, with AM/PM
+TimeFormat = "%I:%M %p" #12 hour format, with AM/PM
 
 def PostToTelegram_Schedule(area, load_stage, schedule):
     print ("PostToTelegram_Schedule")
@@ -43,18 +43,17 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 stop_time = stop_time.strip()
 
                 #convert from 24 hour format to 12 hour format
-                start_time = datetime.strftime(datetime.strptime(start_time, "%H:%M"), "%I:%M%p")
-                stop_time = datetime.strftime(datetime.strptime(str(stop_time), "%H:%M"), "%I:%M%p")
+                start_time = datetime.strftime(datetime.strptime(start_time, "%H:%M"), TimeFormat)
+                stop_time = datetime.strftime(datetime.strptime(str(stop_time), "%H:%M"), TimeFormat)
                                 
-                #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
-                if ((start_time > today.strftime(TimeFormat)) or (stop_time > today.strftime(TimeFormat))):
+                if  (stop_time > today.strftime(TimeFormat)): #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
                     #calculate duration of each slot
                     tdelta = datetime.strptime(stop_time, TimeFormat) - datetime.strptime(start_time, TimeFormat)
                     print (tdelta)
                     if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
-                        schedule_today_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours)" + "\n")
+                        schedule_today_temp += (start_time +" to " + stop_time + " \\(" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours\\)" + "\n")
                     else:
-                        schedule_today_temp += (start_time +" - " + stop_time + "\n")
+                        schedule_today_temp += (start_time +" to " + stop_time + "\n")
 
         schedule_today = schedule_today_temp
         if not schedule_today: #if all the time slots have passed
@@ -84,8 +83,8 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 stop_time = stop_time.strip()
 
                 #convert from 24 hour format to 12 hour format
-                start_time = datetime.strftime(datetime.strptime(start_time, "%H:%M"), "%I:%M%p")
-                stop_time = datetime.strftime(datetime.strptime(str(stop_time), "%H:%M"), "%I:%M%p")
+                start_time = datetime.strftime(datetime.strptime(start_time, "%H:%M"), TimeFormat)
+                stop_time = datetime.strftime(datetime.strptime(str(stop_time), "%H:%M"), TimeFormat)
                 
                 #calculate duration of each slot
                 tdelta = datetime.strptime(stop_time, TimeFormat) - datetime.strptime(start_time, TimeFormat)
@@ -94,25 +93,27 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 #tday, ttime = str(tdelta).split(",")
                 #print (ttime)
                 if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
-                    schedule_tomorrow_temp += (start_time +" - " + stop_time + " (" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours)" + "\n")
+                    schedule_tomorrow_temp += (start_time +" to " + stop_time + " \\(" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours\\)" + "\n")
                 else:
-                    schedule_tomorrow_temp += (start_time +" - " + stop_time + "\n")
+                    schedule_tomorrow_temp += (start_time +" to " + stop_time + "\n")
 
         schedule_tomorrow = schedule_tomorrow_temp
     
 
     if int(load_stage) > 0:
         #print(schedule[today.strftime("%a, %d %b")]['S'])
-        load_message = (area + " Loadshedding Notice \n"
-        "Stage " + str(load_stage) + "  \n"
-        "The loadshedding schedule for today - " + today.strftime("%a, %d %b") + ": \n" 
+        load_message = (area + " **Loadshedding** Notice \n"
+        "Stage _" + str(load_stage) + "_  \n"
+        "The loadshedding schedule for __today__ \\- " + today.strftime("%a, %d %b") + ": \n" 
         "" + schedule_today + "  \n" +
-        "The loadshedding schedule for tomorrow - " + tomorrow.strftime("%a, %d %b") + ": \n" 
+        "The loadshedding schedule for __tomorrow__ \\- " + tomorrow.strftime("%a, %d %b") + ": \n" 
         "" + schedule_tomorrow)
+
+        print(load_message)
 
         telegram_response = requests.post(
                 url='https://api.telegram.org/bot' + TelegramBotToken + '/sendMessage',
-                data={'chat_id': TelegramChatID, 'text': load_message}).json()
+                data={'chat_id': TelegramChatID, 'parse_mode': 'MarkdownV2','text': load_message}).json()
         print(telegram_response)
     else:
         print("Stage 0 - no need to send a schedule")
