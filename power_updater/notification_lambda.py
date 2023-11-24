@@ -46,7 +46,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 start_time = datetime.strftime(datetime.strptime(start_time, "%H:%M"), TimeFormat)
                 stop_time = datetime.strftime(datetime.strptime(str(stop_time), "%H:%M"), TimeFormat)
                                 
-                if  (stop_time > today.strftime(TimeFormat)): #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
+                if True: #(stop_time > today.strftime(TimeFormat)): #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
                     #calculate duration of each slot
                     tdelta = datetime.strptime(stop_time, TimeFormat) - datetime.strptime(start_time, TimeFormat)
                     print (tdelta)

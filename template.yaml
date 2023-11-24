@@ -11,6 +11,9 @@ Globals:
     Architectures:
         - arm64
     ReservedConcurrentExecutions: 1
+    LoggingConfig:
+      LogGroup: !Sub /aws/lambda/${AWS::StackName}
+      LogFormat: JSON
 
 Parameters:
     TelegramBotToken:
@@ -32,9 +35,11 @@ Resources:
             TableName: !Ref PowerUpdaterTable 
       Events:
         GetEskomStageEvent:
-          Type: Schedule
+          Type: ScheduleV2
           Properties:
-            Schedule: cron(0 * * * ? *) #run every hour, on the hour (at the 0th minute)
+            Description: run every hour
+            ScheduleExpression: cron(0 * * * ? *) #run every hour, on the hour (at the 0th minute)
+            ScheduleExpressionTimezone: GMT+2
 
   PowerUpdaterGetScheduleFunction:
     Type: AWS::Serverless::Function 
@@ -49,9 +54,11 @@ Resources:
             TableName: !Ref PowerUpdaterTable 
       Events:
         GetEskomScheduleEvent:
-          Type: Schedule
+          Type: ScheduleV2
           Properties:
-            Schedule: cron(1 3,7,11,15,19 * * ? *) #run 4 hourly, 1 minute past the hour, at specific hours in GMT
+            Description: run every hour
+            ScheduleExpression: cron(1 5,9,13,17,21 * * ? *) #run 4 hourly, 2 minutes past the hour, at specific hours in GMT+2
+            ScheduleExpressionTimezone: GMT+2
   
   PowerUpdaterNotificationFunction:
     Type: AWS::Serverless::Function 
@@ -80,9 +87,11 @@ Resources:
               Filters:
                 - Pattern: '{"eventName": ["MODIFY"]}'
         NotificationEvent:
-          Type: Schedule
+          Type: ScheduleV2
           Properties:
-            Schedule: cron(2 3,7,11,15,19 * * ? *) #run 4 hourly, 2 minutes past the hour, at specific hours in GMT
+            Description: run every hour
+            ScheduleExpression: cron(2 5,9,13,17,21 * * ? *) #run 4 hourly, 2 minutes past the hour, at specific hours in GMT+2
+            ScheduleExpressionTimezone: GMT+2
 
   PowerUpdaterTelegramHandlerFunction:
     Type: AWS::Serverless::Function 
