@@ -1,29 +1,31 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
+Description: |
   PowerUpdater: Eskom Loadshedding Telegram Bot
 
 Globals:
   Function:
     Timeout: 40
     MemorySize: 128
-    Runtime: python3.11
+    Runtime: python3.12
+    Tags:
+      project: "PowerUpdater"
     Architectures:
-        - arm64
+      - arm64
     ReservedConcurrentExecutions: 1
     LoggingConfig:
       LogGroup: !Sub /aws/lambda/${AWS::StackName}
       LogFormat: JSON
 
 Parameters:
-    TelegramBotToken:
-      Type: String
-    TelegramChatID:
-      Type: String
+  TelegramBotToken:
+    Type: String
+  TelegramChatID:
+    Type: String
 
 Resources:
   PowerUpdaterGetStageFunction:
-    Type: AWS::Serverless::Function 
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: power_updater/
       Handler: get_stage_lambda.lambda_handler
@@ -32,17 +34,16 @@ Resources:
           PowerUpdaterTableName: !Ref PowerUpdaterTable
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PowerUpdaterTable 
+            TableName: !Ref PowerUpdaterTable
       Events:
         GetEskomStageEvent:
           Type: ScheduleV2
           Properties:
             Description: run every hour
-            ScheduleExpression: cron(0 * * * ? *) #run every hour, on the hour (at the 0th minute)
+            ScheduleExpression: cron(0 * * * ? *)
             ScheduleExpressionTimezone: GMT+2
-
   PowerUpdaterGetScheduleFunction:
-    Type: AWS::Serverless::Function 
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: power_updater/
       Handler: get_schedule_lambda.lambda_handler
@@ -51,17 +52,16 @@ Resources:
           PowerUpdaterTableName: !Ref PowerUpdaterTable
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PowerUpdaterTable 
+            TableName: !Ref PowerUpdaterTable
       Events:
         GetEskomScheduleEvent:
           Type: ScheduleV2
           Properties:
             Description: run every hour
-            ScheduleExpression: cron(1 5,9,13,17,21 * * ? *) #run 4 hourly, 2 minutes past the hour, at specific hours in GMT+2
+            ScheduleExpression: cron(1 5,9,13,17,21 * * ? *)
             ScheduleExpressionTimezone: GMT+2
-  
   PowerUpdaterNotificationFunction:
-    Type: AWS::Serverless::Function 
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: power_updater/
       Handler: notification_lambda.lambda_handler
@@ -75,9 +75,9 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
         - LambdaInvokePolicy:
-            FunctionName: !Ref PowerUpdaterGetScheduleFunction 
+            FunctionName: !Ref PowerUpdaterGetScheduleFunction
       Events:
-        Stream: #invoked when the stage changes, need to send telegram updates
+        Stream:
           Type: DynamoDB
           Properties:
             Stream: !GetAtt PowerUpdaterTable.StreamArn
@@ -90,11 +90,10 @@ Resources:
           Type: ScheduleV2
           Properties:
             Description: run every hour
-            ScheduleExpression: cron(2 5,9,13,17,21 * * ? *) #run 4 hourly, 2 minutes past the hour, at specific hours in GMT+2
+            ScheduleExpression: cron(2 5,9,13,17,21 * * ? *)
             ScheduleExpressionTimezone: GMT+2
-
   PowerUpdaterTelegramHandlerFunction:
-    Type: AWS::Serverless::Function 
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: power_updater/
       Handler: telegramhandler_lambda.lambda_handler
@@ -110,36 +109,40 @@ Resources:
             StateMachineName: !GetAtt TelegramScheduleCommandStateMachine.Name
       Events:
         TelegramWebHook:
-          Type: Api 
+          Type: Api
           Properties:
             Path: /
             Method: POST
-  
   PowerUpdaterTable:
     Type: AWS::DynamoDB::Table
-    Properties: 
-      AttributeDefinitions: 
+    Properties:
+      AttributeDefinitions:
         - AttributeName: area
           AttributeType: S
-      KeySchema: 
+      KeySchema:
         - AttributeName: area
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
-
+      Tags:
+        - Value: "PowerUpdater"
+          Key: "project"
   TelegramScheduleCommandStateMachine:
-    Type: AWS::Serverless::StateMachine 
+    Type: AWS::Serverless::StateMachine
     Properties:
-      DefinitionUri: statemachine/telegram_command_schedule.asl.json
       DefinitionSubstitutions:
         PowerUpdaterGetStageFunctionArn: !GetAtt PowerUpdaterGetStageFunction.Arn
         PowerUpdaterGetScheduleFunctionArn: !GetAtt PowerUpdaterGetScheduleFunction.Arn
         PowerUpdaterNotificationFunctionArn: !GetAtt PowerUpdaterNotificationFunction.Arn
-      Policies: 
-      - LambdaInvokePolicy:
-          FunctionName: !Ref PowerUpdaterGetStageFunction
-      - LambdaInvokePolicy:
-          FunctionName: !Ref PowerUpdaterGetScheduleFunction
-      - LambdaInvokePolicy:
-          FunctionName: !Ref PowerUpdaterNotificationFunction
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PowerUpdaterGetStageFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PowerUpdaterGetScheduleFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PowerUpdaterNotificationFunction
+      DefinitionUri: statemachine/telegram_command_schedule.asl.json
+      Tags:
+        Value: "PowerUpdater"
+        Key: "project"
