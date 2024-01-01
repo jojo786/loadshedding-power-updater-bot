@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} PowerUpdater {% endblock %}</h1>
+    
+    <table class="table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Load Stage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for area in areas %}
+          
+            <tr>
+                <td><a href="{{ url_for('schedule_area', area=area['area']) }}">{{ area['area'] }}</a></td> 
+                <td>{{ area['load_stage'] }}</td>
+            </tr>
+          
+          {% endfor %}
+        </tbody>
+      </table>
+    
+{% endblock %}

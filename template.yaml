@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: |
-  PowerUpdater: Eskom Loadshedding Telegram Bot
+Description: "PowerUpdater: Eskom Loadshedding Telegram Bot"
 
 Globals:
   Function:
@@ -146,3 +145,32 @@ Resources:
       Tags:
         Value: "PowerUpdater"
         Key: "project"
+
+  FlaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: flask/
+      Handler: run.sh #required for the Lambda Web Adapter
+      Events:
+        HelloWorld:
+          Type: HttpApi
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          PORT: 8000
+          PowerUpdaterTable: !Ref PowerUpdaterTable
+      Layers:
+        - !Sub arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerArm64:17
+    Connectors:
+      PowerUpdaterTableConnector:
+        Properties:
+          Destination: 
+            Id: PowerUpdaterTable
+          Permissions: 
+            - Read
+            - Write 
+
+Outputs:
+  FlaskFunctionApi:
+    Description: API Gateway endpoint URL for FlaskFunction
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/"
