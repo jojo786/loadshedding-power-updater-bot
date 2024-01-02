@@ -3,7 +3,9 @@ import os
 from boto3.dynamodb.conditions import Key
 from boto3 import resource
 from werkzeug.exceptions import abort
-from datetime import datetime
+import datetime
+from dateutil.parser import parse
+from collections import OrderedDict
 
 dynamodb = resource('dynamodb')
 power_table = dynamodb.Table(os.environ["PowerUpdaterTable"])
@@ -25,8 +27,10 @@ def index():
 @app.route('/schedule/<string:area>')
 def schedule_area(area):
     area = get_area(area)
+    #order by date
+    sorted_schedule = sorted(area['schedule'].items(), key=lambda x: parse(x[0]))
     
-    return render_template('schedule_area.html', area=area)
+    return render_template('schedule_area.html', area_name=area['area'], area_stage=area['load_stage'], area_schedule=sorted_schedule)
 
 def get_area(area):
     try:
@@ -37,14 +41,3 @@ def get_area(area):
         abort(404)
 
     return area
-    
-    for record in response['records']:
-        post['id'] = record[0]['longValue']
-        post['created'] = record[1]['stringValue']
-        post['title'] = record[2]['stringValue']
-        post['content'] = record[3]['stringValue']
-    
-    if len(post) == 0:
-        abort(404)
-    
-    return post

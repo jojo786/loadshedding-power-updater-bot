@@ -1,7 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2>{% block title %} {{ area['area'] }} {% endblock %}</h2>
-    <span class="badge badge-primary">Stage: {{ area['load_stage'] }}</span>
-    <p>{{ area['schedule'] }}</p>
+    <h2>{% block title %} {{ area_name }} {% endblock %}</h2>
+    <span class="badge badge-primary">Stage: {{ area_stage }}</span>
+    <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+           {% for schedule in area_schedule %}  
+          
+            <tr>
+                <td>{{ schedule[0] }}</td> 
+                <td>{{ schedule[1] }}</td>
+            </tr>
+          
+          {% endfor %}
+        </tbody>
+      </table>
+
 {% endblock %}

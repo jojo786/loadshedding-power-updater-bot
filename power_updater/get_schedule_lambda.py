@@ -43,6 +43,9 @@ def GetLoadsheddingSchedule(stage):
                         #print("2nd time")
                         schedule[load_date] = schedule[load_date] + ", " + load_time
     
+    sorted(schedule.items(), reverse=True)
+    print("after sorting:....")
+    print(schedule)
     return schedule
 
 def WriteToDB(area, schedule):
