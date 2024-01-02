@@ -27,6 +27,7 @@ def index():
 @app.route('/schedule/<string:area>')
 def schedule_area(area):
     area = get_area(area)
+    
     #order by date
     sorted_schedule = sorted(area['schedule'].items(), key=lambda x: parse(x[0]))
     

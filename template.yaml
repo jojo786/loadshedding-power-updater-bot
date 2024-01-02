@@ -2,6 +2,15 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: "PowerUpdater: Eskom Loadshedding Telegram Bot"
 
+Parameters:
+  TelegramBotToken:
+    Type: String
+  TelegramChatID:
+    Type: String
+  FQDN:
+    Type: String
+    Description: Fully qualified domain name, for example ip.eol.dev
+
 Globals:
   Function:
     Timeout: 40
@@ -15,12 +24,6 @@ Globals:
     LoggingConfig:
       LogGroup: !Sub /aws/lambda/${AWS::StackName}
       LogFormat: JSON
-
-Parameters:
-  TelegramBotToken:
-    Type: String
-  TelegramChatID:
-    Type: String
 
 Resources:
   PowerUpdaterGetStageFunction:
@@ -41,6 +44,7 @@ Resources:
             Description: run every hour
             ScheduleExpression: cron(0 * * * ? *)
             ScheduleExpressionTimezone: GMT+2
+  
   PowerUpdaterGetScheduleFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -59,6 +63,7 @@ Resources:
             Description: run every hour
             ScheduleExpression: cron(1 5,9,13,17,21 * * ? *)
             ScheduleExpressionTimezone: GMT+2
+  
   PowerUpdaterNotificationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -91,6 +96,7 @@ Resources:
             Description: run every hour
             ScheduleExpression: cron(2 5,9,13,17,21 * * ? *)
             ScheduleExpressionTimezone: GMT+2
+  
   PowerUpdaterTelegramHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -112,6 +118,7 @@ Resources:
           Properties:
             Path: /
             Method: POST
+  
   PowerUpdaterTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -127,6 +134,7 @@ Resources:
       Tags:
         - Value: "PowerUpdater"
           Key: "project"
+  
   TelegramScheduleCommandStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -154,6 +162,8 @@ Resources:
       Events:
         HelloWorld:
           Type: HttpApi
+          Properties:
+            ApiId: !Ref FlaskHttpApiGateway 
       Environment:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
@@ -170,7 +180,35 @@ Resources:
             - Read
             - Write 
 
+  # Create our SSL certificate
+  GenerateCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties: 
+      DomainName: !Ref FQDN
+      ValidationMethod: DNS
+      DomainValidationOptions:
+      - DomainName:
+          Fn::Sub: '*.${FQDN}'
+        ValidationDomain:
+          Fn::Sub: '*.${FQDN}'
+      - DomainName:
+          Ref: FQDN
+        ValidationDomain:
+          Ref: FQDN
+      SubjectAlternativeNames:
+      - Fn::Sub: '*.${FQDN}'
+      - Ref: FQDN
+
+  # Create endpoint for our domain
+  FlaskHttpApiGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Domain:
+        DomainName: !Ref FQDN
+        CertificateArn: !Ref GenerateCertificate
+
+
 Outputs:
   FlaskFunctionApi:
     Description: API Gateway endpoint URL for FlaskFunction
-    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/"
+    Value: !Sub "https://${FlaskHttpApiGateway}.execute-api.${AWS::Region}.${AWS::URLSuffix}/"
