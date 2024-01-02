@@ -24,6 +24,11 @@ def index():
               
     return render_template('index.html', areas=areas) 
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
+     
+
 @app.route('/schedule/<string:area>')
 def schedule_area(area):
     area = get_area(area)

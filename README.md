@@ -1,5 +1,5 @@
 # Loadshedding Power Updater Telegram Bot
-Telegram Bot that provides Eskom Loadshedding updates - running on AWS Serverless
+Telegram Bot that provides Eskom Loadshedding updates - running on AWS Serverless.
 
 Loosely-based off https://github.com/daffster/mypowerstats, but completly re-written to run as a Telegram bot, running on AWS Lambda and DynamoDB, deployed using AWS SAM.
 
@@ -20,6 +20,8 @@ The loadshedding schedule for tomorrow - Mon, 17 Apr:
 ```
 
 The bot also supports you asking it for the schedule on an ad-hoc basis using the `/schedule` command.
+
+The bot has has a web front-end: https://powerupdater.hacksaw.co.za/ - where you can see the list of areas and schedules.
 
 ## Architecture 
 

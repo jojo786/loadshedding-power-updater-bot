@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{% block title %} PowerUpdater {% endblock %}</h1>
+    
+    Telegram Bot that provides Eskom Loadshedding updates - running on AWS Serverless
+    <p>
+    Github: <a href=https://github.com/jojo786/loadshedding-power-updater-bot>https://github.com/jojo786/loadshedding-power-updater-bot</a>
+    <br>
+   
+    Pulls loadshedding stage and schedule info from <a href=https://loadshedding.eskom.co.za/LoadShedding/>https://loadshedding.eskom.co.za/LoadShedding</a>, and makes it available as a Telegram bot. You can interact with the bot directly and request the loadshedding using the /schedule command, and/or the bot can be added to your Telegram community groups/channels, and it will post the schedule for your area.
+    <br>
+    
+    The bot also supports you asking it for the schedule on an ad-hoc basis using the /schedule command.
+    
+{% endblock %}
