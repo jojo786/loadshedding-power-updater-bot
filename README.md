@@ -1,7 +1,8 @@
 # Loadshedding Power Updater Telegram Bot
-Telegram Bot that provides Eskom Loadshedding updates - running on AWS Serverless.
+Power Updater is an app that provides Eskom Loadshedding updates - running on AWS Serverless. Users can interact with Power Updater in two ways:
+1. A Telegram bot: [@PowerUpdatedBot](https://t.me/PowerUpdatedBot)
+2. A web front-end: [https://powerupdater.hacksaw.co.za/](https://powerupdater.hacksaw.co.za/)
 
-Loosely-based off https://github.com/daffster/mypowerstats, but completly re-written to run as a Telegram bot, running on AWS Lambda and DynamoDB, deployed using AWS SAM.
 
 Pulls loadshedding stage and schedule info from https://loadshedding.eskom.co.za/LoadShedding/, and makes it available as a Telegram bot. You can interact with the bot directly and request the loadshedding using the `/schedule` command, and/or the bot can be added to your Telegram community groups/channels, and it will post the schedule for your area.
 
@@ -21,7 +22,9 @@ The loadshedding schedule for tomorrow - Mon, 17 Apr:
 
 The bot also supports you asking it for the schedule on an ad-hoc basis using the `/schedule` command.
 
-The bot has has a web front-end: https://powerupdater.hacksaw.co.za/ - where you can see the list of areas and schedules.
+The bot has a web front-end: https://powerupdater.hacksaw.co.za/ - where you can see the list of areas and schedules.
+
+Loosely-based off https://github.com/daffster/mypowerstats, but completly re-written.
 
 ## Architecture 
 
@@ -29,14 +32,14 @@ For a detailed view of the architecture, [read my blog about how this uses chore
 
 ![architecture](docs/Architecture.png)
 
-1. `get_schedule_lambda.py` Lambda function gets invoked via cron schedule (EventBridge rule) to hit the [Eskom loadshedding status endpoint](https://loadshedding.eskom.co.za/LoadShedding/GetStatus) and get the loadshedding stage. This is stored on Dynamo, for each area/location/suburb.
-2. A filter is setup on DynamoDB Streams to send changes to the `notification_lambda.py` Lambda service. If the loadshedding stage has changed, the new stage will be sent, which will be posted to Telegram
-3. Once a day, `get_schedule_lambda.py` Lambda function gets invoked via cron schedule (EventBridge rule) to hit the [Eskom loadshedding schedule endpoint](https://loadshedding.eskom.co.za/LoadShedding/GetScheduleM) and store the schedule in DynamoDB. 
-4. A filter is setup on DynamoDB Streams to send changes to the `notification_lambda.py` Lambda service. If the loadshedding schedule has changed, it will be posted to Telegram
+1. `get_schedule_lambda.py` Lambda function gets invoked via an EventBridge schedule to call the [Eskom loadshedding status endpoint](https://loadshedding.eskom.co.za/LoadShedding/GetStatus) and get the loadshedding stage. This is stored on DynamoDB, for each area/location/suburb.
+2. A filter is setup on DynamoDB Streams to send changes to the `notification_lambda.py` Lambda function. If the loadshedding stage has changed, the new stage will be sent, which will be posted to Telegram.
+3. Once a day, `get_schedule_lambda.py` Lambda function gets invoked via an EventBridge schedule to call the [Eskom loadshedding schedule endpoint](https://loadshedding.eskom.co.za/LoadShedding/GetScheduleM) and store the schedule in DynamoDB. 
+4. A filter is setup on DynamoDB Streams to send changes to the `notification_lambda.py` Lambda function. If the loadshedding schedule has changed, it will be posted to Telegram
 5. Every 2 hours, `notification_lambda.py` Lambda function gets invoked via cron schedule (EventBridge rule) to send loadshedding reminders. It reads the latest stage and schedule from DynamoDB, and posts to Telegram
 
 ## How to run it
-- Create your bot using BotFather, and note the token, e.g. 12334342:ABCD124324234
+- Create your bot using BotFather, and take note of the token, e.g. 12334342:ABCD124324234
 - Use [AWS SAM](https://aws.amazon.com/serverless/sam/) to build and deploy to AWS:
 
 - - Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html), and  [configure it](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-config)

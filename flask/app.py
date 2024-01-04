@@ -1,11 +1,9 @@
-from flask import Flask, render_template, request, url_for, flash, redirect
+from flask import Flask, render_template
 import os
 from boto3.dynamodb.conditions import Key
 from boto3 import resource
 from werkzeug.exceptions import abort
-import datetime
 from dateutil.parser import parse
-from collections import OrderedDict
 
 dynamodb = resource('dynamodb')
 power_table = dynamodb.Table(os.environ["PowerUpdaterTable"])
