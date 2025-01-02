@@ -25,8 +25,13 @@ Globals:
       LogGroup: !Sub /aws/lambda/${AWS::StackName}
       LogFormat: JSON
     Layers:
-      - !Sub "arn:aws:lambda:${AWS::Region}:012438385374:layer:LambdaInsightsExtension-Arm64:18" #Specific for Cape Town
+      - !Sub "arn:aws:lambda:${AWS::Region}:012438385374:layer:LambdaInsightsExtension-Arm64:18" #Lambda Insights Layer - Specific for Cape Town
+      - !Sub "arn:aws:lambda:${AWS::Region}:904233096616:layer:AWSOpenTelemetryDistroPython:5" #Application Signals Layer - Specific for Cape Town
     Tracing: Active
+    Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+    
 Resources:
   PowerUpdaterGetStageFunction:
     Type: AWS::Serverless::Function
@@ -38,6 +43,7 @@ Resources:
           PowerUpdaterTableName: !Ref PowerUpdaterTable
       Policies:
         - CloudWatchLambdaInsightsExecutionRolePolicy
+        #- CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
       Events:
@@ -57,6 +63,8 @@ Resources:
         Variables:
           PowerUpdaterTableName: !Ref PowerUpdaterTable
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+       # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
       Events:
@@ -79,6 +87,8 @@ Resources:
           TelegramBotToken: !Ref TelegramBotToken
           TelegramChatID: !Ref TelegramChatID
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+       # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
         - LambdaInvokePolicy:
@@ -111,6 +121,8 @@ Resources:
           TelegramChatID: !Ref TelegramChatID
           TelegramScheduleCommandStateMachine: !GetAtt TelegramScheduleCommandStateMachine.Arn
       Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+       # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
         - StepFunctionsExecutionPolicy:
@@ -167,6 +179,9 @@ Resources:
           Type: HttpApi
           Properties:
             ApiId: !Ref FlaskHttpApiGateway 
+      Policies:
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+       # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
       Environment:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
