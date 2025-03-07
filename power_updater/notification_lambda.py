@@ -46,7 +46,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 start_time = datetime.strftime(datetime.strptime(start_time, "%H:%M"), TimeFormat)
                 stop_time = datetime.strftime(datetime.strptime(str(stop_time), "%H:%M"), TimeFormat)
                                 
-                if True: #(stop_time > today.strftime(TimeFormat)): #check to see if one of the loadshedding times has already passed, so it can be excluded from the schedule
+                if True: 
                     #calculate duration of each slot
                     tdelta = datetime.strptime(stop_time, TimeFormat) - datetime.strptime(start_time, TimeFormat)
                     print (tdelta)
@@ -56,6 +56,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                         schedule_today_temp += (start_time +" to " + stop_time + "\n")
 
         schedule_today = schedule_today_temp
+        schedule_today = format_schedule_with_passed_times(schedule_today)
         if not schedule_today: #if all the time slots have passed
             schedule_today = 'NO LOADSHEDDING\n'
          
@@ -117,6 +118,42 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         print(telegram_response)
     else:
         print("Stage 0 - no need to send a schedule")
+
+def format_schedule_with_passed_times(schedule):
+    # Get current time and add 2 hours for GMT+2
+    current_time = datetime.now() + timedelta(hours=2)
+    formatted_slots = []
+    
+    # Split the schedule into individual time slots
+    slots = schedule.split('\n')
+    
+    for slot in slots:
+        if not slot.strip():  # Skip empty lines
+            continue
+            
+        # Split the time range and extract end time
+        end_time_str = slot.split('to')[1].strip()
+        try:
+            # Parse the 12-hour format time
+            end_time = datetime.strptime(end_time_str, '%I:%M %p').replace(
+                year=current_time.year,
+                month=current_time.month,
+                day=current_time.day
+            )
+            
+            # If the end time has passed, apply strikethrough
+            if current_time > end_time:
+                formatted_slots.append(f"~{slot}~")
+            else:
+                formatted_slots.append(slot)
+        except ValueError as e:
+            # In case of parsing errors, add the slot without modification
+            formatted_slots.append(slot)
+            print(f"Error parsing time: {e}")
+    
+    # Join the formatted slots back together
+    return '\n'.join(formatted_slots)
+
 
 def PostToTelegram_StageChange(area, load_stage):
 
