@@ -3,10 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: "PowerUpdater: Eskom Loadshedding Telegram Bot"
 
 Parameters:
-  TelegramBotToken:
-    Type: String
-  TelegramChatID:
-    Type: String
   FQDN:
     Type: String
     Description: Fully qualified domain name for ACM and APIGW, to be used for the flask app, for example ip.eol.dev
@@ -31,8 +27,6 @@ Globals:
     Environment:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
-          TelegramBotToken: !Ref TelegramBotToken
-          TelegramChatID: !Ref TelegramChatID
           PowerUpdaterTableName: !Ref PowerUpdaterTable
           StackName: !Sub ${AWS::StackName}
         
