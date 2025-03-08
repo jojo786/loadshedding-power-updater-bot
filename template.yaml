@@ -83,6 +83,12 @@ Resources:
             TableName: !Ref PowerUpdaterTable
         - LambdaInvokePolicy:
             FunctionName: !Ref PowerUpdaterGetScheduleFunction
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:*:*:parameter/${AWS::StackName}/*"
       Events:
         Stream:
           Type: DynamoDB

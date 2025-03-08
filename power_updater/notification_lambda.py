@@ -3,13 +3,23 @@ import boto3
 import os
 from datetime import datetime, timedelta
 import json
+from aws_lambda_powertools.utilities import parameters
 
-dynamodb = boto3.resource('dynamodb')
-load_table = dynamodb.Table(os.environ['PowerUpdaterTableName'])
+StackName = os.environ['StackName']
+
+# Initialize boto3 clients
+ssm = boto3.client('ssm')
 lambda_client = boto3.client('lambda')
+dynamodb = boto3.resource('dynamodb')
+
+load_table = dynamodb.Table(os.environ['PowerUpdaterTableName'])
 get_schedule = os.environ['PowerUpdaterGetScheduleFunction']
-TelegramBotToken = os.environ['TelegramBotToken']
-TelegramChatID = os.environ['TelegramChatID']
+
+# Get the Telegram bot token from Parameter Store
+ssm_provider = parameters.SSMProvider()
+TelegramBotToken = ssm_provider.get('/'+StackName+'/telegram/prod/bot_token', decrypt=True)
+TelegramChatID = ssm_provider.get('/'+StackName+'/telegram/prod/chat_id', decrypt=True)
+
 
 today = datetime.now() + timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA (GMT+2).
 tomorrow = datetime.now() + timedelta(days=1)
