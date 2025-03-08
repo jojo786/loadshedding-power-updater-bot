@@ -39,7 +39,8 @@ For a detailed view of the architecture, [read my blog about how this uses chore
 5. Every 2 hours, `notification_lambda.py` Lambda function gets invoked via cron schedule (EventBridge rule) to send loadshedding reminders. It reads the latest stage and schedule from DynamoDB, and posts to Telegram
 
 ## How to run it
-- Create your bot using BotFather, and take note of the token, e.g. 12334342:ABCD124324234
+- Create your bot using [BotFather](https://core.telegram.org/bots/tutorial), and take note of the token, e.g. 12334342:ABCD124324234
+- Store the token securely in AWS SSM: `aws ssm put-parameter --name "/power-updater/telegram/prod/bot_token" --type "SecureString" --value "12334342:ABCD124324234" --overwrite`
 - Use [AWS SAM](https://aws.amazon.com/serverless/sam/) to build and deploy to AWS:
 
 - - Install [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html), and  [configure it](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-config)
@@ -57,11 +58,14 @@ For future deploys, you can just run:
 sam build && sam deploy
 ```
 
-- Update the [Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) for `PowerUpdaterTableName`, `TelegramBotToken` and `TelegramChatID`
 - Update your Telegram bot to change from polling to Webhook, by pasting this URL in your browser, or curl'ing it - Use your own bot token and Lambda URL endpoint: https://api.telegram.org/bot12334342:ABCD124324234/setWebHook?url=https://1fgfgfd56.lambda-url.eu-west-1.on.aws/. You can check that it was set correctly by going to https://api.telegram.org/bot12334342:ABCD124324234/getWebhookInfo, which should include the url of your Lambda URL, as well as any errors Telegram is encounterting calling your bot on that API.
+- To ensure that only Telegram (servers) are calling your webhook, use the following to protect your webhook:
+- - Set [the `secret_token` on the webhook](https://core.telegram.org/bots/api#setwebhook) to ensure that header “X-Telegram-Bot-Api-Secret-Token” is sent
 
 
 ## TODO
 
 - Even though area is a field in the DB, need to configure it properly for multiple areas
 - Pull announcements from https://twitter.com/Eskom_SA
+- Use WAF to limit API GW clients to [Telegram IP](https://core.telegram.org/bots/webhooks#the-short-version)
+- Use API GW HTTP Header Request Validator to ensure that the header “X-Telegram-Bot-Api-Secret-Token” exists
