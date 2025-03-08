@@ -2,3 +2,4 @@ requests
 boto3
 bs4
 python-telegram-bot==20.2
+aws_lambda_powertools

@@ -4,11 +4,18 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import os
 import boto3
+from aws_lambda_powertools.utilities import parameters
 
-
-TelegramBotToken = os.environ['TelegramBotToken']
-TelegramChatID = os.environ['TelegramChatID']
+StackName = os.environ['StackName']
 TelegramScheduleCommandStateMachine = os.environ['TelegramScheduleCommandStateMachine']
+
+# Initialize SSM client
+ssm = boto3.client('ssm')
+# Get the Telegram bot token from Parameter Store
+ssm_provider = parameters.SSMProvider()
+TelegramBotToken = ssm_provider.get('/'+StackName+'/telegram/prod/bot_token', decrypt=True)
+TelegramChatID = ssm_provider.get('/'+StackName+'/telegram/prod/chat_id', decrypt=True)
+
 
 application = ApplicationBuilder().token(TelegramBotToken).build()
 

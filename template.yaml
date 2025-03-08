@@ -9,7 +9,7 @@ Parameters:
     Type: String
   FQDN:
     Type: String
-    Description: Fully qualified domain name, for example ip.eol.dev
+    Description: Fully qualified domain name for ACM and APIGW, to be used for the flask app, for example ip.eol.dev
 
 Globals:
   Function:
@@ -31,6 +31,11 @@ Globals:
     Environment:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+          TelegramBotToken: !Ref TelegramBotToken
+          TelegramChatID: !Ref TelegramChatID
+          PowerUpdaterTableName: !Ref PowerUpdaterTable
+          StackName: !Sub ${AWS::StackName}
+        
     
 Resources:
   PowerUpdaterGetStageFunction:
@@ -38,9 +43,6 @@ Resources:
     Properties:
       CodeUri: power_updater/
       Handler: get_stage_lambda.lambda_handler
-      Environment:
-        Variables:
-          PowerUpdaterTableName: !Ref PowerUpdaterTable
       Policies:
         - CloudWatchLambdaInsightsExecutionRolePolicy
         #- CloudWatchLambdaApplicationSignalsExecutionRolePolicy
@@ -59,9 +61,6 @@ Resources:
     Properties:
       CodeUri: power_updater/
       Handler: get_schedule_lambda.lambda_handler
-      Environment:
-        Variables:
-          PowerUpdaterTableName: !Ref PowerUpdaterTable
       Policies:
         - CloudWatchLambdaInsightsExecutionRolePolicy
        # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
@@ -82,10 +81,7 @@ Resources:
       Handler: notification_lambda.lambda_handler
       Environment:
         Variables:
-          PowerUpdaterTableName: !Ref PowerUpdaterTable
           PowerUpdaterGetScheduleFunction: !Ref PowerUpdaterGetScheduleFunction
-          TelegramBotToken: !Ref TelegramBotToken
-          TelegramChatID: !Ref TelegramChatID
       Policies:
         - CloudWatchLambdaInsightsExecutionRolePolicy
        # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
@@ -117,8 +113,6 @@ Resources:
       Handler: telegramhandler_lambda.lambda_handler
       Environment:
         Variables:
-          TelegramBotToken: !Ref TelegramBotToken
-          TelegramChatID: !Ref TelegramChatID
           TelegramScheduleCommandStateMachine: !GetAtt TelegramScheduleCommandStateMachine.Arn
       Policies:
         - CloudWatchLambdaInsightsExecutionRolePolicy
@@ -127,6 +121,12 @@ Resources:
             TableName: !Ref PowerUpdaterTable
         - StepFunctionsExecutionPolicy:
             StateMachineName: !GetAtt TelegramScheduleCommandStateMachine.Name
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:*:*:parameter/${AWS::StackName}/*"
       Events:
         TelegramWebHook:
           Type: Api
@@ -186,7 +186,6 @@ Resources:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
           PORT: 8000
-          PowerUpdaterTable: !Ref PowerUpdaterTable
       Layers:
         - !Sub arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerArm64:17
     Connectors:
