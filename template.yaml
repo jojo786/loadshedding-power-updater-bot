@@ -29,7 +29,6 @@ Globals:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
           PowerUpdaterTableName: !Ref PowerUpdaterTable
           StackName: !Sub ${AWS::StackName}
-        
     
 Resources:
   PowerUpdaterGetStageFunction:

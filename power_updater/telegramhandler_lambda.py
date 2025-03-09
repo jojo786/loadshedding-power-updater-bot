@@ -21,11 +21,11 @@ TelegramBotAPISecretToken = ssm_provider.get('/'+StackName+'/telegram/prod/api_s
 
 application = ApplicationBuilder().token(TelegramBotToken).build()
 
-async def health(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Start health command")
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm here")
+async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Start status command")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="PowerUpdater is running!")
 
-async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Start Schedule command - Step Functions")
     try:
         response = stepfunctions.start_execution(
@@ -54,8 +54,8 @@ def lambda_handler(event, context):
 
 async def main(event, context):
    
-    application.add_handler(CommandHandler('health', health))
-    application.add_handler(CommandHandler('schedule', schedule))
+    application.add_handler(CommandHandler('status', status_command))
+    application.add_handler(CommandHandler('schedule', schedule_command))
 
     try:    
         await application.initialize()
