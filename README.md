@@ -60,7 +60,7 @@ sam build && sam deploy
 
 - Update your Telegram bot to change from polling to Webhook, by pasting this URL in your browser, or curl'ing it - Use your own bot token and Lambda URL endpoint: https://api.telegram.org/bot12334342:ABCD124324234/setWebHook?url=https://1fgfgfd56.lambda-url.eu-west-1.on.aws/. You can check that it was set correctly by going to https://api.telegram.org/bot12334342:ABCD124324234/getWebhookInfo, which should include the url of your Lambda URL, as well as any errors Telegram is encounterting calling your bot on that API.
 - To ensure that only Telegram (servers) are calling your webhook, use the following to protect your webhook:
-- - Set [the `secret_token` on the webhook](https://core.telegram.org/bots/api#setwebhook) to ensure that header “X-Telegram-Bot-Api-Secret-Token” is sent
+- - Set [the `secret_token` on the webhook](https://core.telegram.org/bots/api#setwebhook) to ensure that header “X-Telegram-Bot-Api-Secret-Token” is sent: `https://api.telegram.org/bot12334342:ABCD124324234/setWebHook?url=https://1fgfgfd56.lambda-url.eu-west-1.on.aws/Prod&secret_token=thisismysecret`
 
 
 ## TODO
