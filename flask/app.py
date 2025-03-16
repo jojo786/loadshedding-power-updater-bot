@@ -6,7 +6,7 @@ from werkzeug.exceptions import abort
 from dateutil.parser import parse
 
 dynamodb = resource('dynamodb')
-power_table = dynamodb.Table(os.environ["PowerUpdaterTable"])
+load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dfgdfg67567jjghsdfsdi789!@##@$'
 
@@ -15,7 +15,7 @@ def index():
     areas = ''
     
     try: 
-        response = power_table.scan()
+        response = load_table.scan()
         areas = response['Items']
     except Exception as error:
         print("dynamo scan failed:", error, flush=True) 
@@ -38,7 +38,7 @@ def schedule_area(area):
 
 def get_area(area):
     try:
-        response = power_table.get_item(Key={'area': area})
+        response = load_table.get_item(Key={'area': area})
         area = response['Item']
     except Exception as error:
         print("dynamo get post failed:", error, flush=True) 

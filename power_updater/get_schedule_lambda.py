@@ -1,15 +1,18 @@
-import time
 import requests
 from bs4 import BeautifulSoup, NavigableString, Tag
 import boto3
 import os
 
 dynamodb = boto3.resource('dynamodb')
-load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
+try:
+    load_table = dynamodb.Table(os.environ["PowerUpdaterTableName"])
+except:
+    print("ERROR: Cannot load the DynamoDB table. Make sure the table name is correct in the environment variable.")
 
 def GetLoadsheddingSchedule(stage):
     print ("Getting Schedule for stage " + str(stage))
 
+    #hard coded for Buccleuch
     schedule = requests.get("https://loadshedding.eskom.co.za/LoadShedding/GetScheduleM/1020715/"+str(stage)+"/Gauteng/2808")
 
     # parse the whole page
@@ -71,6 +74,64 @@ def getStage():
        
 
 def lambda_handler(event, context):
+    #See if this is a bedrock agent invocation
+    print("GetSchedule: lambda_handler")
+    print(event)
+    try:
+        """This function handles requests for the load shedding tool.
+
+        Parameters:
+        event (dict): The details and metadata for the request
+        context (dict): additional context for the request
+
+        Returns:
+        response (dict): The response for the tool
+        """
+        actionGroup = event['actionGroup']
+        function = event['function']
+        parameters = event.get('parameters', [])
+        session_attributes = event.get('sessionAttributes', {})
+        area = None
+        stage = None
+        responseBody = None
+        
+        for param in parameters:
+            if param["name"] == "area":
+                area = param["value"]
+            if param["name"] == "stage":
+                stage = param["value"]
+
+        # agent = event['agent']
+        actionGroup = event['actionGroup']
+        function = event['function']
+        parameters = event.get('parameters', [])
+        session_attributes = event.get('sessionAttributes', {})
+
+        if function == 'GetLoadsheddingSchedule':
+            print("Get Loadshedding Schedule")
+            schedule = GetLoadsheddingSchedule(stage)
+            responseBody = {
+                    'TEXT': {
+                        "body": f"Load shedding schedule is: {schedule}"
+                    }
+                }
+
+        action_response = {
+            'actionGroup': actionGroup,
+            'function': function,
+            'functionResponse': {
+                'responseBody': responseBody
+            }
+        }
+
+        function_response = {'response': action_response, 'messageVersion': event['messageVersion']}
+        #logger.info("Response: {}".format(function_response))
+
+        return function_response
+    except:
+        print("NOT Bedrock Agent invocation")
+      
+    #A normal Telegram command or Step Function invocation
     stage = getStage()
     schedule = GetLoadsheddingSchedule(stage)
     WriteToDB('Buccleuch', schedule)

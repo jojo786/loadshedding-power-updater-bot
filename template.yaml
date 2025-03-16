@@ -21,8 +21,8 @@ Globals:
       LogGroup: !Sub /aws/lambda/${AWS::StackName}
       LogFormat: JSON
     Layers:
-      - !Sub "arn:aws:lambda:${AWS::Region}:012438385374:layer:LambdaInsightsExtension-Arm64:18" #Lambda Insights Layer - Specific for Cape Town
-      - !Sub "arn:aws:lambda:${AWS::Region}:904233096616:layer:AWSOpenTelemetryDistroPython:5" #Application Signals Layer - Specific for Cape Town
+      - !Sub "arn:aws:lambda:${AWS::Region}:580247275435:layer:LambdaInsightsExtension-Arm64:22" #Lambda Insights Layer - Specific for us-east-1
+      - !Sub "arn:aws:lambda:${AWS::Region}:615299751070:layer:AWSOpenTelemetryDistroPython:12" #Application Signals Layer - Specific for us-east-1
     Tracing: Active
     Environment:
         Variables:
@@ -41,6 +41,12 @@ Resources:
         #- CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:*:*:parameter/${AWS::StackName}/*"
       Events:
         GetEskomStageEvent:
           Type: ScheduleV2
@@ -49,6 +55,16 @@ Resources:
             ScheduleExpression: cron(0 * * * ? *)
             ScheduleExpressionTimezone: GMT+2
   
+  #Lambda Resource-based policy permission to allow the Agent to invoke GetStageFunction
+  PowerUpdaterGetStageFunctionBedrock:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PowerUpdaterGetStageFunction
+      Action: lambda:InvokeFunction
+      Principal: bedrock.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/${Agent}"
+
   PowerUpdaterGetScheduleFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -59,14 +75,31 @@ Resources:
        # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:*:*:parameter/${AWS::StackName}/*"
       Events:
         GetEskomScheduleEvent:
           Type: ScheduleV2
           Properties:
             Description: run every hour
             ScheduleExpression: cron(1 5,9,13,17,21 * * ? *)
-            ScheduleExpressionTimezone: GMT+2
+            ScheduleExpressionTimezone: GMT+2        
   
+  #Lambda Resource-based policy permission to allow the Agent to invoke GetScheduleFunction
+  PowerUpdaterGetScheduleFunctionBedrock:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PowerUpdaterGetScheduleFunction
+      Action: lambda:InvokeFunction
+      Principal: bedrock.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/${Agent}"
+
+
   PowerUpdaterNotificationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -113,6 +146,8 @@ Resources:
       Environment:
         Variables:
           TelegramScheduleCommandStateMachine: !GetAtt TelegramScheduleCommandStateMachine.Arn
+          AgentId: !GetAtt Agent.AgentId
+          AgentAliasId: !GetAtt AgentAlias.AgentAliasId      
       Policies:
         - CloudWatchLambdaInsightsExecutionRolePolicy
        # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
@@ -126,12 +161,17 @@ Resources:
                 - ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:*:*:parameter/${AWS::StackName}/*"
+            - Effect: Allow
+              Action:
+                  - bedrock:*
+              Resource: '*'
       Events:
         TelegramWebHook:
           Type: Api
           Properties:
             Path: /
             Method: POST
+          
   
   PowerUpdaterTable:
     Type: AWS::DynamoDB::Table
@@ -223,8 +263,93 @@ Resources:
         DomainName: !Ref FQDN
         CertificateArn: !Ref GenerateCertificate
 
+  AmazonBedrockExecutionRoleForAgents:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - bedrock.amazonaws.com
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/Admin"
+            Action: sts:AssumeRole
+      Description: A role for the agent
+      Path: /service-role/
+      Policies:
+        - PolicyName: InvokePowerUpdaterFunctions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt PowerUpdaterGetStageFunction.Arn
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt PowerUpdaterGetScheduleFunction.Arn
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:*
+                Resource: '*'
+
+  Agent:
+    Type: AWS::Bedrock::Agent
+    Properties:
+      AgentName: !Sub "PowerUpdater-Eskom-Loadshedding-Agent"
+      AgentResourceRoleArn: !GetAtt AmazonBedrockExecutionRoleForAgents.Arn
+      Description: "Agent for providing information regarding Eskom loadshedding"
+      IdleSessionTTLInSeconds: 600
+      Instruction: |
+        You are a helpful agent that helps customers with Eskom loadshedding queries. 
+        You can query Eskom systems for the loadshedding stage and schedule, and help customers understand it.
+      FoundationModel: "anthropic.claude-3-sonnet-20240229-v1:0"
+      ActionGroups:
+        - ActionGroupName: PowerUpdater-Eskom-Loadshedding-GetStage
+          Description: "Use this tool to query Eskom systems for the loadshedding stage"
+          ActionGroupExecutor:
+            Lambda: !GetAtt PowerUpdaterGetStageFunction.Arn
+          ActionGroupState: ENABLED
+          FunctionSchema:
+            Functions:
+              - Name: GetLoadsheddingStage
+                Description: |
+                  returns the load shedding stage from Eskom API
+        - ActionGroupName: PowerUpdater-Eskom-Loadshedding-GetSchedule
+          Description: "Use this tool to query Eskom systems for the loadshedding schedule"
+          ActionGroupExecutor:
+            Lambda: !GetAtt PowerUpdaterGetScheduleFunction.Arn
+          ActionGroupState: ENABLED
+          FunctionSchema:
+            Functions:
+              - Name: GetLoadsheddingSchedule
+                Description: |
+                  returns the load shedding schedule from Eskom API for the specified stage
+                Parameters:
+                  stage:
+                    Description: "The current loadshedding stage"
+                    Required: True
+                    Type: string
+
+  # Then create the Agent Alias
+  AgentAlias:
+    Type: AWS::Bedrock::AgentAlias
+    Properties:
+      AgentAliasName: !Sub PowerUpdater-Eskom-Loadshedding-Agent
+      AgentId: !GetAtt Agent.AgentId
+      Description: !Sub PowerUpdater-Eskom-Loadshedding-Agent
 
 Outputs:
   FlaskFunctionApi:
     Description: API Gateway endpoint URL for FlaskFunction
     Value: !Sub "https://${FlaskHttpApiGateway}.execute-api.${AWS::Region}.${AWS::URLSuffix}/"
+  TelegramWebHook:
+    Description: API Gateway endpoint URL to be used in Telegram Webhook
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

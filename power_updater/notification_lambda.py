@@ -221,12 +221,11 @@ def CheckSchedule():
     PostToTelegram_Schedule(area, load_stage, schedule)
 
 def lambda_handler(event, context):
-    print("Event: " )
-    print(event)
+    print(f"Event:  {event}")
     try:
-        print("Trying to see if this is a DynamoStreamEvent") #if this is a DynamoStreamEvent, then the stage has been updated in Dynamo, so we need to check if the stage has changed. 
+        print("Trying to see if this is a DynamoStreamEvent") #if this is a DynamoStreamEvent, so we check if its in the event
         if event['Records'][0]['eventSource'] == 'aws:dynamodb':
             ProcessDynamoStreamEvent(event)
     except Exception as err:
-        print("Exception: lambda_handler - this is a EventEngineEvent event (cron) or manual testing")
+        print("Exception: lambda_handler - this is a EventEngineEvent event (cron), Step Function workflow or manual testing")
         CheckSchedule() #this is a regular scheduled event, so get the stage and scheduel from Dynamo, and post to Telegram.

@@ -1,17 +1,22 @@
 import json
 import asyncio
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 import os
 import boto3
 from aws_lambda_powertools.utilities import parameters
+import pytz
+from datetime import datetime
 
 StackName = os.environ['StackName']
 TelegramScheduleCommandStateMachine = os.environ['TelegramScheduleCommandStateMachine']
+agent_id = os.environ['AgentId']
+agent_alias_id = os.environ['AgentAliasId']
 
 # Initialize boto3 clients
 stepfunctions = boto3.client('stepfunctions')
 ssm = boto3.client('ssm')
+bedrock_agent = boto3.client('bedrock-agent-runtime', region_name='us-east-1')
 
 # Get the Telegram bot token from Parameter Store
 ssm_provider = parameters.SSMProvider()
@@ -20,6 +25,9 @@ TelegramChatID = ssm_provider.get('/'+StackName+'/telegram/prod/chat_id', decryp
 TelegramBotAPISecretToken = ssm_provider.get('/'+StackName+'/telegram/prod/api_secret_token', decrypt=True)
 
 application = ApplicationBuilder().token(TelegramBotToken).build()
+
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="I am PowerUpdater - an Eskom Loadshedding GenAI Agent chatbot running on AWS Serverless. Check the menu for the commands I support, or ask me anyting!")
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Start status command")
@@ -51,11 +59,74 @@ def lambda_handler(event, context):
     
     return asyncio.get_event_loop().run_until_complete(main(event, context))
 
+    
+async def bedrock(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Start bedrock")
+     # Get current date and time in South Africa timezone
+    sa_timezone = pytz.timezone('Africa/Johannesburg')
+    current_time = datetime.now(sa_timezone)
+    formatted_datetime = current_time.strftime("%Y-%m-%d %H:%M:%S %Z")
+        
+    try:
+        # Get the user's message text from the update object
+        chat_id = update.effective_chat.id
+        user_message = update.message.text
+        
+        # Call the Bedrock agent
+        response = bedrock_agent.invoke_agent(
+            agentId=agent_id, 
+            agentAliasId=agent_alias_id, 
+            sessionId=str(chat_id),  # use Telegram chat_id as the session ID - Bedrock agent will manage chat history per chat_id
+            inputText=user_message,
+            sessionState={
+                "promptSessionAttributes": {
+                    "currentDateTime": formatted_datetime,
+                    "timeZone": "Africa/Johannesburg"
+                }
+            }
+        )
+        #print(response)
+
+        # Process the event stream
+        complete_response = []
+        for event in response['completion']:
+            try:
+                # Print raw bytes for debugging
+                raw_bytes = event['chunk']['bytes']
+                #print("Raw bytes:", raw_bytes)
+                
+                # Decode bytes to string
+                decoded_str = raw_bytes.decode('utf-8')
+                print("Decoded string:", decoded_str)
+                
+                if decoded_str.strip():
+                    complete_response.append(decoded_str)
+
+            except Exception as e:
+                print(f"Error processing chunk: {str(e)}")
+        
+         # Join all responses and send back to Telegram
+        final_response = ''.join(complete_response)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=final_response
+        )
+        
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        print(error_message)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"Sorry, I encountered an error: {error_message}"
+        )
 
 async def main(event, context):
    
+    application.add_handler(CommandHandler('start', start_command))
     application.add_handler(CommandHandler('status', status_command))
     application.add_handler(CommandHandler('schedule', schedule_command))
+    bedrock_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), bedrock)
+    application.add_handler(bedrock_handler)
 
     try:    
         await application.initialize()
