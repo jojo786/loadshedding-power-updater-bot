@@ -28,6 +28,7 @@ Globals:
         Variables:
           AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
           PowerUpdaterTableName: !Ref PowerUpdaterTable
+          SubscribersTableName: !Ref SubscribersTable
           StackName: !Sub ${AWS::StackName}
     
 Resources:
@@ -113,6 +114,8 @@ Resources:
        # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscribersTable
         - LambdaInvokePolicy:
             FunctionName: !Ref PowerUpdaterGetScheduleFunction
         - Statement:
@@ -153,6 +156,8 @@ Resources:
        # - CloudWatchLambdaApplicationSignalsExecutionRolePolicy
         - DynamoDBCrudPolicy:
             TableName: !Ref PowerUpdaterTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SubscribersTable
         - StepFunctionsExecutionPolicy:
             StateMachineName: !GetAtt TelegramScheduleCommandStateMachine.Name
         - Statement:
@@ -346,6 +351,24 @@ Resources:
       AgentId: !GetAtt Agent.AgentId
       Description: !Sub PowerUpdater-Eskom-Loadshedding-Agent
 
+  SubscribersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: area
+          AttributeType: S
+        - AttributeName: chat_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: area
+          KeyType: HASH
+        - AttributeName: chat_id
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: project
+          Value: "PowerUpdater"
+  
 Outputs:
   FlaskFunctionApi:
     Description: API Gateway endpoint URL for FlaskFunction

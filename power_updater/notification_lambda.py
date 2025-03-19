@@ -4,26 +4,52 @@ import os
 from datetime import datetime, timedelta
 import json
 from aws_lambda_powertools.utilities import parameters
-
-StackName = os.environ['StackName']
+from aws_lambda_powertools import Logger
 
 # Initialize boto3 clients
 ssm = boto3.client('ssm')
 lambda_client = boto3.client('lambda')
 dynamodb = boto3.resource('dynamodb')
+logger = Logger()
 
+StackName = os.environ['StackName']
+subscribers_table = dynamodb.Table(os.environ['SubscribersTableName'])
 load_table = dynamodb.Table(os.environ['PowerUpdaterTableName'])
 get_schedule = os.environ['PowerUpdaterGetScheduleFunction']
+
 
 # Get the Telegram bot token from Parameter Store
 ssm_provider = parameters.SSMProvider()
 TelegramBotToken = ssm_provider.get('/'+StackName+'/telegram/prod/bot_token', decrypt=True)
-TelegramChatID = ssm_provider.get('/'+StackName+'/telegram/prod/chat_id', decrypt=True)
 
 
 today = datetime.now() + timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA (GMT+2).
 tomorrow = datetime.now() + timedelta(days=1)
 TimeFormat = "%I:%M %p" #12 hour format, with AM/PM
+
+def GetSubscribers(area):
+    """
+    Get all active subscribers for a specific area
+    Returns a list of chat_ids
+    """
+    try:
+        # Query the table for subscribers with the specified area
+        response = subscribers_table.query(
+            KeyConditionExpression='area = :area',
+            ExpressionAttributeValues={
+                ':area': area
+            }
+        )
+        
+        # Extract chat_ids from the response
+        subscribers = [item['chat_id'] for item in response.get('Items', [])]
+        
+        logger.info(f"Found {len(subscribers)} subscribers for area {area}")
+        return subscribers
+
+    except Exception as e:
+        logger.exception(f"Error getting subscribers for area {area}")
+        return []
 
 def PostToTelegram_Schedule(area, load_stage, schedule):
     print ("PostToTelegram_Schedule")
@@ -122,12 +148,26 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
 
         print(load_message)
 
-        telegram_response = requests.post(
-                url='https://api.telegram.org/bot' + TelegramBotToken + '/sendMessage',
-                data={'chat_id': TelegramChatID, 'parse_mode': 'MarkdownV2','text': load_message}).json()
-        print(telegram_response)
+        # Get all subscribers for this area
+        subscribers = GetSubscribers("Buccleuch")
+        
+        # Send message to each subscriber
+        for chat_id in subscribers:
+            try:
+                telegram_response = requests.post(
+                    url='https://api.telegram.org/bot' + TelegramBotToken + '/sendMessage',
+                    data={
+                        'chat_id': chat_id, 
+                        'parse_mode': 'MarkdownV2',
+                        'text': load_message
+                    }).json()
+                logger.info(f"Telegram response for chat_id {chat_id}: {telegram_response}")
+            except Exception as e:
+                logger.error(f"Failed to send message to chat_id {chat_id}: {str(e)}")
+                continue
     else:
-        print("Stage 0 - no need to send a schedule")
+        logger.info("Stage 0 - no need to send a schedule")
+
 
 def format_schedule_with_passed_times(schedule):
     # Get current time and add 2 hours for GMT+2
@@ -173,11 +213,23 @@ def PostToTelegram_StageChange(area, load_stage):
     load_message = (area + " Loadshedding Notice \n"
         + today.strftime("%a, %d %b") + "  \n"
         "Eskom has now moved to stage " + str(load_stage) + "  \n")
-
-    telegram_response = requests.post(
-            url='https://api.telegram.org/bot' + TelegramBotToken + '/sendMessage',
-            data={'chat_id': TelegramChatID, 'text': load_message}).json()
-    print(telegram_response)
+    print(f"load_message: \n {load_message}")
+    # Get all subscribers for this area
+    subscribers = GetSubscribers("Buccleuch")
+    
+    # Send message to each subscriber
+    for chat_id in subscribers:
+        try:
+            telegram_response = requests.post(
+                url='https://api.telegram.org/bot' + TelegramBotToken + '/sendMessage',
+                data={
+                    'chat_id': chat_id, 
+                    'text': load_message
+                }).json()
+            logger.info(f"Telegram response for chat_id {chat_id}: {telegram_response}")
+        except Exception as e:
+            logger.error(f"Failed to send message to chat_id {chat_id}: {str(e)}")
+            continue
 
 
 def ProcessDynamoStreamEvent(event):

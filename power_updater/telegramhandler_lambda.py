@@ -8,15 +8,18 @@ from aws_lambda_powertools.utilities import parameters
 import pytz
 from datetime import datetime
 
+
 StackName = os.environ['StackName']
 TelegramScheduleCommandStateMachine = os.environ['TelegramScheduleCommandStateMachine']
 agent_id = os.environ['AgentId']
 agent_alias_id = os.environ['AgentAliasId']
+subscribers_table = os.environ['SubscribersTableName']
 
 # Initialize boto3 clients
 stepfunctions = boto3.client('stepfunctions')
 ssm = boto3.client('ssm')
 bedrock_agent = boto3.client('bedrock-agent-runtime', region_name='us-east-1')
+dynamodb = boto3.client('dynamodb')
 
 # Get the Telegram bot token from Parameter Store
 ssm_provider = parameters.SSMProvider()
@@ -27,11 +30,42 @@ TelegramBotAPISecretToken = ssm_provider.get('/'+StackName+'/telegram/prod/api_s
 application = ApplicationBuilder().token(TelegramBotToken).build()
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="I am PowerUpdater - an Eskom Loadshedding GenAI Agent chatbot running on AWS Serverless. Check the menu for the commands I support, or ask me anyting!")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Hello, I am PowerUpdater - an Eskom Loadshedding GenAI Agent chatbot running on AWS Serverless. Check the menu for the commands I support, or ask me anyting!")
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Start status command")
     await context.bot.send_message(chat_id=update.effective_chat.id, text="PowerUpdater is running!")
+    
+async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("Start subscribe command")
+    
+    try:
+        # Get chat ID and current timestamp
+        chat_id = str(update.effective_chat.id)
+        timestamp = datetime.now().isoformat()
+        
+        # Save subscription to DynamoDB
+        response = dynamodb.put_item(
+            TableName=subscribers_table,
+            Item={
+                'chat_id': {'S': chat_id},
+                'area': {'S': 'Buccleuch'}, #hardcoded for now until multiple areas supported
+                'type': {'S': 'user'},
+                'date_subscribed': {'S': timestamp},
+                'active': {'BOOL': True}
+            }
+        )
+        
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, 
+            text="You have successfully subscribed to receive loadshedding notifications"
+        )
+        
+    except Exception as e:
+        print(f"Error saving subscription: {str(e)}")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Sorry, there was an error processing your subscription. Please try again later."
+        )    
 
 async def schedule_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Start Schedule command - Step Functions")
@@ -85,7 +119,7 @@ async def bedrock(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
             }
         )
-        #print(response)
+        print(response)
 
         # Process the event stream
         complete_response = []
@@ -125,8 +159,8 @@ async def main(event, context):
     application.add_handler(CommandHandler('start', start_command))
     application.add_handler(CommandHandler('status', status_command))
     application.add_handler(CommandHandler('schedule', schedule_command))
-    bedrock_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), bedrock)
-    application.add_handler(bedrock_handler)
+    application.add_handler(CommandHandler('subscribe', subscribe_command))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), bedrock))
 
     try:    
         await application.initialize()
