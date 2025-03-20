@@ -24,7 +24,6 @@ dynamodb = boto3.client('dynamodb')
 # Get the Telegram bot token from Parameter Store
 ssm_provider = parameters.SSMProvider()
 TelegramBotToken = ssm_provider.get('/'+StackName+'/telegram/prod/bot_token', decrypt=True)
-TelegramChatID = ssm_provider.get('/'+StackName+'/telegram/prod/chat_id', decrypt=True)
 TelegramBotAPISecretToken = ssm_provider.get('/'+StackName+'/telegram/prod/api_secret_token', decrypt=True)
 
 application = ApplicationBuilder().token(TelegramBotToken).build()
