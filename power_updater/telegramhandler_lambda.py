@@ -29,7 +29,7 @@ TelegramBotAPISecretToken = ssm_provider.get('/'+StackName+'/telegram/prod/api_s
 application = ApplicationBuilder().token(TelegramBotToken).build()
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Hello, I am PowerUpdater - an Eskom Loadshedding GenAI Agent chatbot running on AWS Serverless. Check the menu for the commands I support, or ask me anyting!")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Hello, I am PowerUpdater - an Eskom Loadshedding GenAI Agent chatbot, powered by Amazon Bedrock, running on AWS Serverless. Check the menu for the commands I support, or ask me anything!")
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="PowerUpdater is running!")
