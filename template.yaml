@@ -30,6 +30,9 @@ Globals:
           PowerUpdaterTableName: !Ref PowerUpdaterTable
           SubscribersTableName: !Ref SubscribersTable
           StackName: !Sub ${AWS::StackName}
+    AutoPublishAlias: SnapStart
+    SnapStart:
+      ApplyOn: PublishedVersions
     
 Resources:
   PowerUpdaterGetStageFunction:
