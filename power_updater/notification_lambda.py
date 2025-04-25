@@ -23,9 +23,10 @@ ssm_provider = parameters.SSMProvider()
 TelegramBotToken = ssm_provider.get('/'+StackName+'/telegram/prod/bot_token', decrypt=True)
 
 
-today = datetime.now() + timedelta(hours=2) #AWS Cape Town region runs on GMT, which is 2 hours behind SA (GMT+2).
+today = datetime.now() + timedelta(hours=2) #Lambda in all regions uses GMT/UTC, which is 2 hours behind SA (GMT+2), so add 2 hours
 tomorrow = datetime.now() + timedelta(days=1)
 TimeFormat = "%I:%M %p" #12 hour format, with AM/PM
+logger.info(f"Date Time today: {today}")
 
 def GetSubscribers(area):
     """
