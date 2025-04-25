@@ -53,21 +53,20 @@ def GetSubscribers(area):
         return []
 
 def PostToTelegram_Schedule(area, load_stage, schedule):
-    print ("PostToTelegram_Schedule")
-    print(schedule)
+    logger.info(f"PostToTelegram_Schedule: {schedule}")
     
     schedule_today = ''
     schedule_today_temp = ''
 
     try:
-        print("trying to read the today schedule WITH 'S' ")
+        logger.info("trying to read the today schedule WITH 'S' ")
         schedule_today = schedule[today.strftime("%a, %d %b")]['S']
     except:
         try:
-            print("trying to read the today schedule with NO 'S' ")
+            logger.info("trying to read the today schedule with NO 'S' ")
             schedule_today = schedule[today.strftime("%a, %d %b")]
         except:
-             print("could NOT read the today schedule with NO 'S' ")
+             logger.info("could NOT read the today schedule with NO 'S' ")
     finally:
         if not schedule_today.strip(): #for certain stages, like stage 1, there are no loadshedding on some days
             schedule_today = 'NO LOADSHEDDING\n'
@@ -86,7 +85,6 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 if True: 
                     #calculate duration of each slot
                     tdelta = datetime.strptime(stop_time, TimeFormat) - datetime.strptime(start_time, TimeFormat)
-                    print (tdelta)
                     if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
                         schedule_today_temp += (start_time +" to " + stop_time + " \\(" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours\\)" + "\n")
                     else:
@@ -101,14 +99,14 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     schedule_tomorrow_temp = ''
 
     try:
-        print("trying to read the tomorrow schedule WITH 'S' ")
+        logger.info("trying to read the tomorrow schedule WITH 'S' ")
         schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]['S']
     except:
         try:
-            print("trying to read the tomorrow schedule with NO 'S' ")
+            logger.info("trying to read the tomorrow schedule with NO 'S' ")
             schedule_tomorrow = schedule[tomorrow.strftime("%a, %d %b")]
         except:
-            print("could NOT read the tomorrow schedule with NO 'S' ")
+            logger.info("could NOT read the tomorrow schedule with NO 'S' ")
     finally:
         if not schedule_tomorrow.strip(): #for certain stages, like stage 1, there are no loadshedding on some days
             schedule_tomorrow_temp = 'NO LOADSHEDDING'
@@ -126,10 +124,8 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
                 
                 #calculate duration of each slot
                 tdelta = datetime.strptime(stop_time, TimeFormat) - datetime.strptime(start_time, TimeFormat)
-                print (tdelta)
                 #if the stop time is in the next day
                 #tday, ttime = str(tdelta).split(",")
-                #print (ttime)
                 if (tdelta > timedelta(hours=4)): #if the duration of any the loadshedding times is greater than 4 hours, then include duration in the message
                     schedule_tomorrow_temp += (start_time +" to " + stop_time + " \\(" + str(int(datetime.strftime(datetime.strptime(str(tdelta), "%H:%M:%S"), "%H"))) + " hours\\)" + "\n")
                 else:
@@ -139,7 +135,6 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
     
 
     if int(load_stage) > 0:
-        #print(schedule[today.strftime("%a, %d %b")]['S'])
         load_message = (area + " **Loadshedding** Notice \n"
         "Stage _" + str(load_stage) + "_  \n"
         "The loadshedding schedule for __today__ \\- " + today.strftime("%a, %d %b") + ": \n" 
@@ -147,7 +142,7 @@ def PostToTelegram_Schedule(area, load_stage, schedule):
         "The loadshedding schedule for __tomorrow__ \\- " + tomorrow.strftime("%a, %d %b") + ": \n" 
         "" + schedule_tomorrow)
 
-        print(load_message)
+        logger.info(load_message)
 
         # Get all subscribers for this area
         subscribers = GetSubscribers("Buccleuch")
@@ -200,7 +195,7 @@ def format_schedule_with_passed_times(schedule):
         except ValueError as e:
             # In case of parsing errors, add the slot without modification
             formatted_slots.append(slot)
-            print(f"Error parsing time: {e}")
+            logger.info(f"Error parsing time: {e}")
     
     # Join the formatted slots back together
     return '\n'.join(formatted_slots)
@@ -214,7 +209,7 @@ def PostToTelegram_StageChange(area, load_stage):
     load_message = (area + " Loadshedding Notice \n"
         + today.strftime("%a, %d %b") + "  \n"
         "Eskom has now moved to stage " + str(load_stage) + "  \n")
-    print(f"load_message: \n {load_message}")
+    logger.info(f"load_message: \n {load_message}")
     # Get all subscribers for this area
     subscribers = GetSubscribers("Buccleuch")
     
@@ -235,15 +230,14 @@ def PostToTelegram_StageChange(area, load_stage):
 
 def ProcessDynamoStreamEvent(event):
     for record in event['Records']:
-        #print (record)
         area = record['dynamodb']['NewImage']['area']['S']
 
         try:
-            print("trying to read from Dynamo Event Stream")
+            logger.info("trying to read from Dynamo Event Stream")
             new_load_stage = record['dynamodb']['NewImage']['load_stage']['N']
-            print("New Load stage: " + str(new_load_stage))
+            logger.info("New Load stage: " + str(new_load_stage))
             old_load_stage = record['dynamodb']['OldImage']['load_stage']['N']
-            print("Old Load stage: " + str(old_load_stage))
+            logger.info("Old Load stage: " + str(old_load_stage))
             
             #Only post to telegram if the stage has changed
             if not (old_load_stage == new_load_stage):
@@ -259,14 +253,13 @@ def ProcessDynamoStreamEvent(event):
                 
                 PostToTelegram_Schedule(area, new_load_stage, schedule['M'])
         except Exception as err:
-            print("Exception: ProcessDynamoStreamEvent")
-            print (err)
+            logger.info(f"Exception: ProcessDynamoStreamEvent")
+            logger.info(err)
              
 
 def CheckSchedule():
-    print ("CheckSchedule")
+    logger.info ("CheckSchedule")
     response = load_table.get_item(Key={'area': 'Buccleuch'})
-    print (response)
     area = response['Item']['area']
     load_stage = response['Item']['load_stage']
     schedule = response['Item']['schedule']
@@ -274,11 +267,11 @@ def CheckSchedule():
     PostToTelegram_Schedule(area, load_stage, schedule)
 
 def lambda_handler(event, context):
-    print(f"Event:  {event}")
+    logger.info(f"Event:  {event}")
     try:
-        print("Trying to see if this is a DynamoStreamEvent") #if this is a DynamoStreamEvent, so we check if its in the event
+        logger.info("Trying to see if this is a DynamoStreamEvent") #if this is a DynamoStreamEvent, so we check if its in the event
         if event['Records'][0]['eventSource'] == 'aws:dynamodb':
             ProcessDynamoStreamEvent(event)
     except Exception as err:
-        print("Exception: lambda_handler - this is a EventEngineEvent event (cron), Step Function workflow or manual testing")
+        logger.info("Exception: lambda_handler - this is a EventEngineEvent event (cron), Step Function workflow or manual testing")
         CheckSchedule() #this is a regular scheduled event, so get the stage and scheduel from Dynamo, and post to Telegram.
