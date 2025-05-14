@@ -26,7 +26,6 @@ TelegramBotToken = ssm_provider.get('/'+StackName+'/telegram/prod/bot_token', de
 today = datetime.now() + timedelta(hours=2) #Lambda in all regions uses GMT/UTC, which is 2 hours behind SA (GMT+2), so add 2 hours
 tomorrow = datetime.now() + timedelta(days=1)
 TimeFormat = "%I:%M %p" #12 hour format, with AM/PM
-logger.info(f"Date Time today: {today}")
 
 def GetSubscribers(area):
     """
@@ -268,6 +267,12 @@ def CheckSchedule():
 
 def lambda_handler(event, context):
     logger.info(f"Event:  {event}")
+
+    today = datetime.now() + timedelta(hours=2) #Lambda in all regions uses GMT/UTC, which is 2 hours behind SA (GMT+2), so add 2 hours
+    tomorrow = datetime.now() + timedelta(days=1)
+    TimeFormat = "%I:%M %p" #12 hour format, with AM/PM
+    logger.info(f"Date Time today: {today}")
+
     try:
         logger.info("Trying to see if this is a DynamoStreamEvent") #if this is a DynamoStreamEvent, so we check if its in the event
         if event['Records'][0]['eventSource'] == 'aws:dynamodb':
