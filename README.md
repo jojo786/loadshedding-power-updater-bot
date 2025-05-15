@@ -4,7 +4,9 @@ Power Updater is an app that provides Eskom Loadshedding updates - running on AW
 2. A web front-end: [https://powerupdater.hacksaw.co.za/](https://powerupdater.hacksaw.co.za/)
 
 
-The app pulls the Eskom loadshedding stage and schedule info from https://loadshedding.eskom.co.za/LoadShedding/, and makes it available as a Telegram bot and Flask web app. You can interact with the bot directly and request the loadshedding using the `/schedule` command, and/or the bot can be added to your Telegram community groups/channels, and it will post the schedule for your area.
+The app pulls the Eskom loadshedding stage and schedule info from https://loadshedding.eskom.co.za/LoadShedding/, and makes it available as a Telegram bot and Flask web app. Power Updater is a GenAI-powered chatbot, so you can interact with the chatbot directly using natural language, or you can request the loadshedding schedule using the `/schedule` command. To be able to receive automated load shedding notifications, you can subscribe using the `/subscribe` command, and/or the bot can be added to your Telegram community groups/channels, and it will post the schedule for your area.
+
+![chat](docs/powerupdater-screenshot.png)
 
 The bot will post the following information five times a day (or depending on the EventBridge Schedule):
 ```
