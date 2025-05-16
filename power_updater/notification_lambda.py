@@ -53,6 +53,7 @@ def GetSubscribers(area):
 
 def PostToTelegram_Schedule(area, load_stage, schedule):
     logger.info(f"PostToTelegram_Schedule: {schedule}")
+    logger.info(f"Date Time today: {today}")
     
     schedule_today = ''
     schedule_today_temp = ''
