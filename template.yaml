@@ -318,7 +318,7 @@ Resources:
       Instruction: |
         You are a helpful agent that helps customers with Eskom loadshedding queries. 
         You can query Eskom systems for the loadshedding stage and schedule, and help customers understand it.
-      FoundationModel: "anthropic.claude-3-sonnet-20240229-v1:0"
+      FoundationModel: "us.anthropic.claude-sonnet-4-20250514-v1:0"
       ActionGroups:
         - ActionGroupName: PowerUpdater-Eskom-Loadshedding-GetStage
           Description: "Use this tool to query Eskom systems for the loadshedding stage"
